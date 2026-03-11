@@ -531,6 +531,26 @@
         .stock-thumb img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s ease; }
         .stock-thumb:hover { border-color: var(--accent); }
         .stock-thumb:hover img { transform: scale(1.08); }
+
+        /* Stock art hover zoom */
+        .stock-zoom-preview {
+            position: fixed;
+            width: 220px;
+            height: 220px;
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            background: var(--white);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+            overflow: hidden;
+        }
+        .stock-zoom-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
         .stock-load-more {
             width: 100%; background: var(--white); border: 1px solid var(--border);
             color: var(--grey); padding: 6px; font-size: 0.68rem; cursor: pointer;
@@ -567,6 +587,42 @@
         .tool-group.collapsed .chevron { transform: rotate(-90deg); }
         .tool-group.collapsed .tool-group-content { display: none; }
         .tool-group-content { margin-top: 12px; }
+
+        /* Sidebar bottom-locked actions */
+        .sidebar-bottom-actions {
+            flex-shrink: 0;
+            padding: 16px 32px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--sidebar-bg);
+        }
+        .sidebar-bottom-actions .tool-btn-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 0;
+        }
+
+        /* Sticky Order Now on preview panel */
+        .sticky-order-btn {
+            position: absolute;
+            bottom: 28px;
+            right: 32px;
+            z-index: 50;
+            padding: 14px 36px;
+            background: var(--accent);
+            border: none;
+            color: var(--white);
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.82rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(122, 53, 248, 0.35);
+        }
+        .sticky-order-btn:hover { background: var(--accent-dark); box-shadow: 0 6px 28px rgba(122, 53, 248, 0.5); transform: translateY(-1px); }
+        .sticky-order-btn.disabled { opacity: 0.4; pointer-events: none; box-shadow: none; }
 
         /* ===== RIGHT PANEL: PREVIEW ===== */
         .preview-panel {
@@ -1139,25 +1195,28 @@
                 </div>
             </div>
 
-            <div class="section-divider"></div>
+        </div>
 
-            <!-- Actions -->
-            <div class="tool-group">
-                <h4>Actions</h4>
-                <div class="tool-btn-row">
-                    <button class="tool-btn" onclick="deleteSelected()">Delete Layer</button>
-                    <button class="tool-btn" onclick="clearDesign()">Clear All</button>
-                </div>
-                <button class="btn-export disabled" style="margin-top:10px" onclick="orderNow()" disabled>Order Now</button>
+        <!-- Bottom-locked actions -->
+        <div class="sidebar-bottom-actions">
+            <div class="tool-btn-row">
+                <button class="tool-btn" onclick="deleteSelected()">Delete Layer</button>
+                <button class="tool-btn" onclick="clearDesign()">Clear All</button>
             </div>
         </div>
     </div>
+
+    <!-- Stock art hover zoom preview -->
+    <div class="stock-zoom-preview" id="stockZoomPreview"><img id="stockZoomImg" src="" alt="Preview"></div>
 
     <!-- RIGHT: Preview Panel -->
     <div class="preview-panel">
         <div class="back-link">
             <a href="index.html">&larr; Back to Site</a>
         </div>
+
+        <!-- Sticky Order Now -->
+        <button class="sticky-order-btn disabled" id="stickyOrderBtn" onclick="orderNow()" disabled>Order Now</button>
 
         <div class="canvas-wrapper" id="canvasWrapper">
             <img class="tshirt-img" id="tshirtImg" src="tees/5001_STAPLE_TEE_BLACK.jpg" alt="T-Shirt">
@@ -1291,11 +1350,17 @@
             if (ready) { mobileBtn.classList.remove('disabled'); mobileBtn.removeAttribute('disabled'); }
             else { mobileBtn.classList.add('disabled'); mobileBtn.setAttribute('disabled', 'true'); }
         }
-        // Desktop button
+        // Desktop button (legacy sidebar — may not exist now)
         const desktopBtn = document.querySelector('.btn-export');
         if (desktopBtn) {
             if (ready) { desktopBtn.classList.remove('disabled'); desktopBtn.removeAttribute('disabled'); }
             else { desktopBtn.classList.add('disabled'); desktopBtn.setAttribute('disabled', 'true'); }
+        }
+        // Sticky Order Now button on preview panel
+        const stickyBtn = document.getElementById('stickyOrderBtn');
+        if (stickyBtn) {
+            if (ready) { stickyBtn.classList.remove('disabled'); stickyBtn.removeAttribute('disabled'); }
+            else { stickyBtn.classList.add('disabled'); stickyBtn.setAttribute('disabled', 'true'); }
         }
 
         // Update mobile upload btn text if artwork is loaded
@@ -1503,6 +1568,17 @@
 
     function loadMoreStock() { stockPage++; fetchStock(true); }
 
+    function positionZoomPreview(e, preview) {
+        const pad = 16;
+        let x = e.clientX + pad;
+        let y = e.clientY - 110;
+        if (x + 230 > window.innerWidth) x = e.clientX - 240;
+        if (y < 8) y = 8;
+        if (y + 230 > window.innerHeight) y = window.innerHeight - 238;
+        preview.style.left = x + 'px';
+        preview.style.top = y + 'px';
+    }
+
     function fetchStock(append) {
         const grid = document.getElementById('stockResults');
         const btn = document.getElementById('stockLoadMore');
@@ -1519,6 +1595,21 @@
                         thumb.className = 'stock-thumb';
                         thumb.innerHTML = `<img src="${hit.webformatURL}" alt="${hit.tags}" loading="lazy">`;
                         thumb.onclick = () => addStockImage(hit.largeImageURL);
+                        // Hover zoom
+                        thumb.addEventListener('mouseenter', (e) => {
+                            const preview = document.getElementById('stockZoomPreview');
+                            const zoomImg = document.getElementById('stockZoomImg');
+                            zoomImg.src = hit.webformatURL;
+                            preview.style.display = 'block';
+                            positionZoomPreview(e, preview);
+                        });
+                        thumb.addEventListener('mousemove', (e) => {
+                            const preview = document.getElementById('stockZoomPreview');
+                            positionZoomPreview(e, preview);
+                        });
+                        thumb.addEventListener('mouseleave', () => {
+                            document.getElementById('stockZoomPreview').style.display = 'none';
+                        });
                         grid.appendChild(thumb);
                     });
                     btn.style.display = (stockPage * 12 < stockTotal) ? 'block' : 'none';
