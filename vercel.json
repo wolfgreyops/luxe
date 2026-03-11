@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "configurator.html", "use": "@vercel/static" },
+    { "src": "configurator-shopify.html", "use": "@vercel/static" },
+    { "src": "airports.html", "use": "@vercel/static" },
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "tees/**", "use": "@vercel/static" },
+    { "src": "*.png", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/config", "dest": "/api/config.js" },
+    { "src": "/create-checkout-session", "dest": "/api/create-checkout-session.js" },
+    { "src": "/session-status", "dest": "/api/session-status.js" }
+  ]
+}

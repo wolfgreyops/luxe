@@ -1,0 +1,2159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Six Thirteen — Product Configurator</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Playfair+Display:wght@700&family=Montserrat:wght@400;700;900&family=Raleway:wght@400;700;900&family=Roboto+Condensed:wght@700&family=Anton&family=Archivo+Black&family=Permanent+Marker&family=Lobster&family=Pacifico&family=Dancing+Script:wght@700&family=Sacramento&family=Great+Vibes&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #7a35f8;
+            --accent-light: #9a65fa;
+            --accent-dark: #5a15d8;
+            --accent-subtle: rgba(122, 53, 248, 0.08);
+            --accent-border: rgba(122, 53, 248, 0.2);
+            --black: #1a1a1a;
+            --dark: #2a2a2a;
+            --sidebar-bg: #f2f2f2;
+            --sidebar-input: #ffffff;
+            --sidebar-input-border: #ddd;
+            --white: #ffffff;
+            --grey: #777777;
+            --text: #2a2a2a;
+            --text-light: #999999;
+            --border: #e0e0e0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+
+        body {
+            font-family: 'Geist', 'Inter', sans-serif;
+            background: var(--white);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        h4 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* ===== FULL-SCREEN LAYOUT ===== */
+        .configurator-page {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ===== LEFT PANEL: OPTIONS ===== */
+        .options-panel {
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            border-right: 1px solid var(--border);
+        }
+
+        .options-header {
+            padding: 24px 32px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .options-header .logo {
+            display: inline-block;
+            text-decoration: none;
+        }
+        .options-header .logo img {
+            height: 45px;
+            width: auto;
+            display: block;
+        }
+
+        .options-header .subtitle {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            color: var(--grey);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: 400;
+            margin-top: 4px;
+        }
+
+        .options-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .options-scroll::-webkit-scrollbar { width: 5px; }
+        .options-scroll::-webkit-scrollbar-track { background: transparent; }
+        .options-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+        /* Tool Groups */
+        .tool-group h4 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border);
+            padding: 20px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--white);
+            border-radius: 6px;
+        }
+        .upload-area:hover { border-color: var(--accent); background: var(--accent-subtle); }
+        .upload-area .upload-icon { font-size: 1.4rem; margin-bottom: 6px; display: block; color: var(--accent); }
+        .upload-area p { font-size: 0.75rem; color: var(--grey); letter-spacing: 0.5px; }
+        .upload-area input { display: none; }
+
+        /* Color Swatches */
+        .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .swatch {
+            width: 36px; height: 36px;
+            border: 2px solid var(--border);
+            cursor: pointer; transition: all 0.3s ease; position: relative;
+            border-radius: 4px;
+        }
+        .swatch:hover { border-color: var(--accent-light); transform: scale(1.08); }
+        .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+        /* Text Input */
+        .text-input {
+            width: 100%; padding: 10px 12px;
+            background: var(--sidebar-input); border: 1px solid var(--sidebar-input-border);
+            color: var(--text); font-family: 'Geist', sans-serif;
+            font-size: 0.85rem; outline: none;
+            transition: border-color 0.3s;
+            border-radius: 4px;
+        }
+        .text-input:focus { border-color: var(--accent); }
+        .text-input::placeholder { color: #aaa; }
+
+        /* Font Select */
+        .font-select {
+            width: 100%; padding: 10px 12px;
+            background: var(--sidebar-input); border: 1px solid var(--sidebar-input-border);
+            color: var(--text); font-size: 0.85rem;
+            outline: none; cursor: pointer;
+            -webkit-appearance: none;
+            transition: border-color 0.3s;
+            border-radius: 4px;
+        }
+        .font-select:focus { border-color: var(--accent); }
+        .font-select option { background: var(--white); color: var(--text); }
+
+        /* Text Color Swatches */
+        .text-color-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .text-color-swatch {
+            width: 28px; height: 28px;
+            border: 2px solid var(--border);
+            cursor: pointer; transition: all 0.2s ease;
+            border-radius: 3px;
+        }
+        .text-color-swatch:hover { transform: scale(1.1); }
+        .text-color-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+        /* Slider Controls */
+        .slider-control { margin-bottom: 10px; }
+        .slider-control label {
+            display: flex; justify-content: space-between;
+            font-size: 0.72rem; color: var(--grey);
+            margin-bottom: 6px; letter-spacing: 0.5px;
+        }
+        .slider-control input[type="range"] {
+            width: 100%; -webkit-appearance: none;
+            height: 2px; background: var(--border); outline: none;
+        }
+        .slider-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px;
+            background: var(--accent); border-radius: 50%; cursor: pointer;
+        }
+        .slider-control input[type="range"]::-moz-range-thumb {
+            width: 14px; height: 14px; background: var(--accent);
+            border-radius: 50%; cursor: pointer; border: none;
+        }
+
+        /* Buttons */
+        .tool-btn {
+            width: 100%; padding: 10px; background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text); font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.72rem; letter-spacing: 1.5px;
+            text-transform: uppercase; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 500;
+            border-radius: 4px;
+        }
+        .tool-btn:hover { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
+        .tool-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .btn-export {
+            width: 100%; padding: 14px; background: var(--accent);
+            border: none; color: var(--white);
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.8rem; letter-spacing: 2px;
+            text-transform: uppercase; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 700;
+            border-radius: 6px;
+        }
+        .btn-export:hover { background: var(--accent-dark); }
+
+        /* ===== CART / SIDEBAR SLIDE TRANSITIONS ===== */
+        .options-panel {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .configurator-page.cart-open .options-panel {
+            transform: translateX(-100%);
+        }
+        .preview-panel {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .configurator-page.cart-open .preview-panel {
+            transform: translateX(-20vw);
+        }
+
+        .cart-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 25vw;
+            min-width: 320px;
+            height: 100vh;
+            background: var(--sidebar-bg);
+            border-left: 1px solid var(--border);
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .configurator-page.cart-open .cart-panel {
+            transform: translateX(0);
+        }
+
+        .cart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .cart-header h3 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            color: var(--text);
+        }
+        .cart-close {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--grey);
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: color 0.2s;
+        }
+        .cart-close:hover { color: var(--text); }
+
+        .cart-body {
+            padding: 24px;
+            flex: 1;
+        }
+        .cart-preview {
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: var(--white);
+            border: 1px solid var(--border);
+        }
+        .cart-preview img {
+            width: 100%;
+            display: block;
+        }
+        .cart-product-name {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .cart-product-detail {
+            font-size: 0.65rem;
+            color: var(--text-light);
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+        .cart-line-items {
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
+        .cart-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-family: 'Geist', sans-serif;
+            font-size: 0.78rem;
+            color: var(--text);
+        }
+        .cart-line .size-label {
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            min-width: 36px;
+        }
+        .cart-line .qty-label {
+            color: var(--grey);
+        }
+        .cart-line .line-price {
+            font-weight: 600;
+        }
+        .cart-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 12px 0;
+        }
+        .cart-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-family: 'Geist', sans-serif;
+        }
+        .cart-total-row .total-label {
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--grey);
+            font-weight: 600;
+        }
+        .cart-total-row .total-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .cart-qty-summary {
+            font-size: 0.68rem;
+            color: var(--text-light);
+            margin-top: 2px;
+            text-align: right;
+        }
+
+        .cart-footer {
+            padding: 16px 24px 24px;
+            border-top: 1px solid var(--border);
+        }
+        .btn-checkout {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            border: none;
+            color: var(--white);
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            border-radius: 6px;
+        }
+        .btn-checkout:hover { background: var(--accent-dark); }
+        .btn-back-edit {
+            width: 100%;
+            padding: 12px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--grey);
+            font-family: 'Geist', sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+            border-radius: 6px;
+        }
+        .btn-back-edit:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* Stripe Checkout Modal */
+        .checkout-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .checkout-overlay.active {
+            display: flex;
+        }
+        .checkout-modal {
+            background: var(--white);
+            border-radius: 12px;
+            width: 625px;
+            max-width: 95vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .checkout-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .checkout-modal-header h3 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            color: var(--text);
+        }
+        .checkout-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            color: var(--grey);
+            cursor: pointer;
+            padding: 4px 8px;
+            transition: color 0.2s;
+        }
+        .checkout-modal-close:hover { color: var(--text); }
+        #checkout-container {
+            min-height: 400px;
+            padding: 0;
+        }
+        .checkout-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            color: var(--grey);
+            font-family: 'Geist', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        .checkout-error {
+            padding: 24px;
+            color: #e53e3e;
+            font-family: 'Geist', sans-serif;
+            font-size: 0.82rem;
+            text-align: center;
+        }
+        /* Return / confirmation state */
+        .order-confirmed {
+            text-align: center;
+            padding: 60px 24px;
+        }
+        .order-confirmed h2 {
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+        .order-confirmed p {
+            color: var(--grey);
+            font-size: 0.85rem;
+        }
+
+        /* Stock Art */
+        .stock-search { display: flex; gap: 6px; margin-bottom: 8px; }
+        .stock-search input {
+            flex: 1; background: var(--sidebar-input); border: 1px solid var(--sidebar-input-border);
+            color: var(--text); padding: 7px 10px; font-size: 0.78rem; border-radius: 4px;
+            outline: none; font-family: 'Geist', sans-serif;
+        }
+        .stock-search input:focus { border-color: var(--accent); }
+        .stock-search button {
+            background: var(--accent); color: #fff; border: none; padding: 7px 12px;
+            font-size: 0.72rem; cursor: pointer; font-weight: 600; letter-spacing: 0.5px;
+            text-transform: uppercase; font-family: 'Geist', sans-serif; border-radius: 4px;
+        }
+        .stock-search button:hover { background: var(--accent-dark); }
+        .stock-categories { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+        .stock-cat-pill {
+            background: var(--white); border: 1px solid var(--border);
+            color: var(--grey); padding: 3px 9px; font-size: 0.65rem; cursor: pointer;
+            transition: all 0.2s ease; letter-spacing: 0.3px; font-family: 'Geist', sans-serif;
+            border-radius: 3px;
+        }
+        .stock-cat-pill:hover, .stock-cat-pill.active {
+            border-color: var(--accent); color: var(--accent); background: var(--accent-subtle);
+        }
+        .stock-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+            max-height: 240px; overflow-y: auto; margin-bottom: 6px;
+        }
+        .stock-grid::-webkit-scrollbar { width: 4px; }
+        .stock-grid::-webkit-scrollbar-track { background: var(--sidebar-bg); }
+        .stock-grid::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+        .stock-thumb {
+            position: relative; overflow: hidden; cursor: pointer;
+            border: 1px solid var(--border); background: var(--white);
+            transition: all 0.2s ease;
+            border-radius: 3px;
+            padding-bottom: 100%; /* force square */
+            height: 0;
+        }
+        .stock-thumb img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s ease; }
+        .stock-thumb:hover { border-color: var(--accent); }
+        .stock-thumb:hover img { transform: scale(1.08); }
+        .stock-load-more {
+            width: 100%; background: var(--white); border: 1px solid var(--border);
+            color: var(--grey); padding: 6px; font-size: 0.68rem; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.8px; font-family: 'Geist', sans-serif;
+            transition: all 0.2s ease; border-radius: 3px;
+        }
+        .stock-load-more:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+        .stock-attr { font-size: 0.58rem; color: var(--text-light); text-align: center; margin-top: 6px; letter-spacing: 0.3px; }
+        .stock-attr a { color: var(--accent-light); text-decoration: none; }
+        .stock-spinner { display: flex; justify-content: center; padding: 20px 0; }
+        .stock-spinner::after {
+            content: ''; width: 20px; height: 20px; border: 2px solid var(--border);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: stockSpin 0.6s linear infinite;
+        }
+        @keyframes stockSpin { to { transform: rotate(360deg); } }
+        .stock-empty { text-align: center; color: var(--grey); font-size: 0.72rem; padding: 20px 0; letter-spacing: 0.3px; }
+
+        /* Collapsible sections */
+        .tool-group-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .tool-group-toggle h4 { margin-bottom: 0; pointer-events: none; }
+        .tool-group-toggle .chevron {
+            width: 16px; height: 16px;
+            color: var(--grey);
+            transition: transform 0.3s ease;
+            opacity: 0.5;
+        }
+        .tool-group.collapsed .chevron { transform: rotate(-90deg); }
+        .tool-group.collapsed .tool-group-content { display: none; }
+        .tool-group-content { margin-top: 12px; }
+
+        /* ===== RIGHT PANEL: PREVIEW ===== */
+        .preview-panel {
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 95%;
+            height: 96%;
+            max-width: 1100px;
+        }
+
+        .tshirt-img {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 95%; max-height: 95%;
+            object-fit: contain;
+            pointer-events: none; user-select: none;
+        }
+
+        #designCanvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            cursor: grab;
+        }
+        #designCanvas:active { cursor: grabbing; }
+
+        /* Product info overlay */
+        .product-info {
+            position: absolute;
+            top: 20px;
+            left: 24px;
+            text-align: left;
+            z-index: 10;
+        }
+        .product-info .product-name {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--grey);
+        }
+        .product-info .product-detail {
+            font-size: 0.65rem;
+            color: var(--text-light);
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+        .size-qty-row {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-start;
+            margin-top: 10px;
+        }
+        .size-qty-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .size-qty-box label {
+            font-family: 'Geist', sans-serif;
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--grey);
+        }
+        .size-qty-box input {
+            width: 42px;
+            height: 34px;
+            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--white);
+            font-family: 'Geist', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .size-qty-box input:focus {
+            border-color: var(--accent);
+        }
+        .size-qty-box input::-webkit-inner-spin-button,
+        .size-qty-box input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .size-qty-box input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Back to site link */
+        .back-link {
+            position: absolute;
+            top: 20px; right: 24px;
+            z-index: 10;
+        }
+        .back-link a {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--grey);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .back-link a:hover { color: var(--accent); }
+
+        /* Divider line */
+        .section-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 2px 0;
+        }
+
+        /* ===== MOBILE MENU TOGGLE ===== */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 14px; left: 14px;
+            z-index: 150;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 44px; height: 44px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+        }
+        .mobile-menu-btn:hover { background: var(--sidebar-bg); }
+        .mobile-menu-btn svg { width: 22px; height: 22px; color: var(--text); }
+        .mobile-menu-btn.is-open svg.icon-menu { display: none; }
+        .mobile-menu-btn:not(.is-open) svg.icon-close { display: none; }
+
+        /* Mobile overlay behind drawer */
+        .mobile-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 89;
+        }
+        .mobile-overlay.visible { display: block; }
+
+        /* Mobile top bar with logo (hidden on desktop) */
+        .mobile-top-bar { display: none; }
+
+        /* Mobile buttons (hidden on desktop) */
+        .mobile-order-btn { display: none; }
+        .mobile-upload-btn { display: none; }
+
+        /* Disabled order button */
+        .mobile-order-btn.disabled,
+        .btn-export.disabled {
+            background: #bbb;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            html, body { overflow: auto; height: auto; }
+
+            .mobile-menu-btn { display: flex; }
+
+            .mobile-top-bar {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                height: 54px;
+                background: var(--white);
+                border-bottom: 1px solid var(--border);
+                z-index: 100;
+            }
+            .mobile-top-bar img {
+                height: 30px;
+                width: auto;
+            }
+
+            .configurator-page {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                min-height: 100dvh;
+                width: 100%;
+            }
+
+            /* Options panel becomes a slide-out drawer */
+            .options-panel {
+                position: fixed;
+                top: 0; left: 0;
+                width: 85vw;
+                max-width: 360px;
+                height: 100vh;
+                height: 100dvh;
+                z-index: 90;
+                transform: translateX(-100%);
+                border-right: 1px solid var(--border);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            }
+            .options-panel.drawer-open {
+                transform: translateX(0);
+            }
+            .configurator-page.cart-open .options-panel { transform: translateX(-100%); }
+
+            .options-header { padding: 16px 20px 14px; }
+            .options-header .logo img { height: 36px; }
+            .options-header .subtitle { font-size: 0.6rem; }
+
+            .options-scroll { padding: 16px 20px 24px; gap: 16px; }
+
+            /* Inputs at 16px to prevent iOS zoom */
+            .text-input,
+            .font-select,
+            .stock-search input {
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            .swatch { width: 34px; height: 34px; }
+            .text-color-swatch { width: 32px; height: 32px; }
+
+            .stock-grid {
+                grid-template-columns: repeat(3, 1fr);
+                max-height: 200px;
+            }
+
+            /* Preview: single column — shirt → details → qty → order */
+            .preview-panel {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                height: auto;
+                min-height: auto;
+                padding: 54px 0 0;
+                overflow: visible;
+            }
+            .configurator-page.cart-open .preview-panel { transform: none; }
+
+            /* Shirt takes 60% of viewport */
+            .canvas-wrapper {
+                width: 100%;
+                height: 60vh;
+                max-width: 100%;
+                aspect-ratio: auto;
+            }
+
+            .tshirt-img {
+                max-width: 90%;
+                max-height: 90%;
+            }
+
+            /* Product name/detail below shirt */
+            .product-info {
+                position: static;
+                width: 100%;
+                padding: 10px 16px 0;
+                text-align: center;
+                z-index: auto;
+            }
+            .product-info .product-name { font-size: 0.7rem; }
+            .product-info .product-detail { font-size: 0.62rem; margin-top: 2px; }
+
+            /* Qty row flows below product info */
+            .size-qty-row {
+                justify-content: center;
+                gap: 8px;
+                margin-top: 12px;
+                padding: 0 16px;
+            }
+            .size-qty-box input {
+                width: 46px; height: 38px;
+                font-size: 16px;
+            }
+            .size-qty-box label { font-size: 0.58rem; }
+
+            /* Mobile upload button */
+            .mobile-upload-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                width: calc(100% - 32px);
+                margin: 16px auto 0;
+                padding: 13px 20px;
+                background: var(--white);
+                border: 2px dashed var(--accent);
+                border-radius: 6px;
+                color: var(--accent);
+                font-family: 'Geist', 'Oswald', sans-serif;
+                font-size: 0.78rem;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                font-weight: 700;
+                cursor: pointer;
+                position: static;
+                transition: all 0.2s;
+            }
+            .mobile-upload-btn:active {
+                background: var(--accent-subtle);
+            }
+            .mobile-upload-btn svg { flex-shrink: 0; }
+
+            /* Mobile order button below upload */
+            .mobile-order-btn {
+                display: block;
+                width: calc(100% - 32px);
+                margin: 10px auto 24px;
+                margin-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+                padding: 14px 20px;
+                background: var(--accent);
+                border: none;
+                border-radius: 6px;
+                color: var(--white);
+                font-family: 'Geist', 'Oswald', sans-serif;
+                font-size: 0.82rem;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                font-weight: 700;
+                cursor: pointer;
+                position: static;
+            }
+            .mobile-order-btn:active:not(.disabled) { background: var(--accent-dark); }
+            .mobile-order-btn.disabled {
+                background: #bbb;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+
+            /* Hide desktop order button on mobile */
+            .btn-export { display: none; }
+
+            /* Hide buttons when cart is open */
+            .configurator-page.cart-open .mobile-order-btn { display: none !important; }
+            .configurator-page.cart-open ~ .mobile-menu-btn { display: none !important; }
+            .configurator-page.cart-open ~ .mobile-top-bar { display: none !important; }
+
+            /* Back link */
+            .back-link { top: 14px; right: 14px; }
+            .back-link a { font-size: 0.6rem; }
+
+            /* Cart panel full-width on mobile */
+            .cart-panel {
+                width: 100vw;
+                min-width: unset;
+            }
+            .configurator-page.cart-open .cart-panel { transform: translateX(0); }
+
+            /* Checkout modal full-screen mobile */
+            .checkout-modal {
+                width: 100vw;
+                max-width: 100vw;
+                max-height: 100vh;
+                max-height: 100dvh;
+                border-radius: 0;
+                height: 100vh;
+                height: 100dvh;
+            }
+            #checkout-container { min-height: 60vh; }
+        }
+
+        /* Tablet tweaks */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .configurator-page {
+                grid-template-columns: 280px 1fr;
+            }
+            .options-scroll { padding: 18px 20px 24px; }
+            .options-header { padding: 18px 20px 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mobile Menu Toggle -->
+<button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileDrawer()">
+    <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+</button>
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileDrawer()"></div>
+
+<div class="configurator-page">
+    <!-- LEFT: Options Panel -->
+    <div class="options-panel" id="optionsPanel">
+        <div class="options-header">
+            <a href="index.html" class="logo"><img src="Diner 1C purple.png" alt="Six Thirteen"></a>
+            <div class="subtitle">Product Configurator</div>
+        </div>
+
+        <div class="options-scroll">
+            <!-- Upload -->
+            <div class="tool-group">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Upload Image</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <div class="upload-area" id="uploadArea">
+                        <span class="upload-icon">&#8593;</span>
+                        <p>Drop image or click to upload</p>
+                        <input type="file" id="fileInput" accept="image/*">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Shirt Color -->
+            <div class="tool-group collapsed">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Shirt Color</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <div class="color-swatches">
+                        <div class="swatch active" data-img="tees/5001_STAPLE_TEE_BLACK.jpg" data-name="Black" style="background:#1a1a1a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_WHITE.jpg" data-name="White" style="background:#f0f0f0" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_NAVY.jpg" data-name="Navy" style="background:#1a2744" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_CHARCOAL.jpg" data-name="Charcoal" style="background:#3a3a3a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_ORCHID.jpg" data-name="Orchid" style="background:#d4b8c4" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_LAPIS.jpg" data-name="Lapis" style="background:#6a7db8" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_RED.jpg" data-name="Red" style="background:#c0392b" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_BURGUNDY.jpg" data-name="Burgundy" style="background:#5a1a2a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_FOREST_GREEN.jpg" data-name="Forest Green" style="background:#1a3a2a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_COBALT.jpg" data-name="Cobalt" style="background:#2d4a8a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_SAND.jpg" data-name="Sand" style="background:#c4a67a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_BONE.jpg" data-name="Bone" style="background:#d8cfc0" onclick="setShirt(this)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Add Text -->
+            <div class="tool-group collapsed">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Add Text</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <input type="text" class="text-input" id="textInput" placeholder="Enter your text..." oninput="updateText()">
+                    <div style="margin-top:10px">
+                        <select class="font-select" id="fontSelect" onchange="updateText()">
+                            <option value="Futura">Futura</option>
+                            <option value="Oswald">Oswald</option>
+                            <option value="Bebas Neue">Bebas Neue</option>
+                            <option value="Anton">Anton</option>
+                            <option value="Archivo Black">Archivo Black</option>
+                            <option value="Montserrat">Montserrat</option>
+                            <option value="Raleway">Raleway</option>
+                            <option value="Roboto Condensed">Roboto Condensed</option>
+                            <option value="Playfair Display">Playfair Display</option>
+                            <option value="Permanent Marker">Permanent Marker</option>
+                            <option value="Lobster">Lobster</option>
+                            <option value="Pacifico">Pacifico</option>
+                            <option value="Dancing Script">Dancing Script</option>
+                            <option value="Sacramento">Sacramento</option>
+                            <option value="Great Vibes">Great Vibes</option>
+                        </select>
+                    </div>
+                    <div style="margin-top:10px">
+                        <div class="slider-control">
+                            <label><span>Font Size</span><span id="fontSizeVal">48px</span></label>
+                            <input type="range" id="fontSizeSlider" min="12" max="120" value="48" oninput="updateText()">
+                        </div>
+                        <div class="slider-control">
+                            <label><span>Letter Spacing</span><span id="kerningVal">0px</span></label>
+                            <input type="range" id="kerningSlider" min="-10" max="40" value="0" oninput="updateText()">
+                        </div>
+                        <div class="slider-control">
+                            <label><span>Curve</span><span id="curveVal">0°</span></label>
+                            <input type="range" id="curveSlider" min="-180" max="180" value="0" oninput="updateText()">
+                        </div>
+                    </div>
+                    <div style="margin-top:8px">
+                        <label style="font-size:0.72rem;color:var(--grey);letter-spacing:0.3px;display:block;margin-bottom:6px">Text Color</label>
+                        <div class="text-color-row">
+                            <div class="text-color-swatch active" style="background:#000000" data-color="#000000" onclick="setTextColor(this)"></div>
+                            <div class="text-color-swatch" style="background:#ffffff;border-color:#ccc" data-color="#ffffff" onclick="setTextColor(this)"></div>
+                            <div class="text-color-swatch" style="background:#C9A96E" data-color="#C9A96E" onclick="setTextColor(this)"></div>
+                            <div class="text-color-swatch" style="background:#c0392b" data-color="#c0392b" onclick="setTextColor(this)"></div>
+                            <div class="text-color-swatch" style="background:#1a2744" data-color="#1a2744" onclick="setTextColor(this)"></div>
+                            <div class="text-color-swatch" style="background:#1a3a2a" data-color="#1a3a2a" onclick="setTextColor(this)"></div>
+                            <div class="text-color-swatch" style="background:#5a1a2a" data-color="#5a1a2a" onclick="setTextColor(this)"></div>
+                            <div class="text-color-swatch" style="background:#6a7db8" data-color="#6a7db8" onclick="setTextColor(this)"></div>
+                        </div>
+                    </div>
+                    <button class="tool-btn" style="margin-top:10px" onclick="addTextToCanvas()">Place Text</button>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Stock Art -->
+            <div class="tool-group collapsed">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Stock Art</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <div class="stock-search">
+                        <input type="text" id="stockSearchInput" placeholder="Search free images..." onkeydown="if(event.key==='Enter')searchStock()">
+                        <button onclick="searchStock()">Go</button>
+                    </div>
+                    <div class="stock-categories">
+                        <span class="stock-cat-pill" onclick="searchStockCategory(this,'animals')">Animals</span>
+                        <span class="stock-cat-pill" onclick="searchStockCategory(this,'nature')">Nature</span>
+                        <span class="stock-cat-pill" onclick="searchStockCategory(this,'abstract')">Abstract</span>
+                        <span class="stock-cat-pill" onclick="searchStockCategory(this,'vintage')">Vintage</span>
+                        <span class="stock-cat-pill" onclick="searchStockCategory(this,'skull')">Skulls</span>
+                        <span class="stock-cat-pill" onclick="searchStockCategory(this,'fire flames')">Flames</span>
+                        <span class="stock-cat-pill" onclick="searchStockCategory(this,'typography')">Type</span>
+                        <span class="stock-cat-pill" onclick="searchStockCategory(this,'pattern')">Patterns</span>
+                    </div>
+                    <div id="stockResults" class="stock-grid"></div>
+                    <button id="stockLoadMore" class="stock-load-more" onclick="loadMoreStock()" style="display:none">Load More</button>
+                    <div class="stock-attr">Images by <a href="https://pixabay.com/" target="_blank">Pixabay</a></div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Transform -->
+            <div class="tool-group collapsed">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Transform</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <div class="slider-control">
+                        <label><span>Size</span><span id="sizeVal">100%</span></label>
+                        <input type="range" id="sizeSlider" min="20" max="250" value="100" oninput="resizeDesign(this.value)">
+                    </div>
+                    <div class="slider-control">
+                        <label><span>Rotation</span><span id="rotVal">0°</span></label>
+                        <input type="range" id="rotSlider" min="0" max="360" value="0" oninput="rotateDesign(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Background Removal -->
+            <div class="tool-group collapsed">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Background Removal</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <div class="slider-control">
+                        <label><span>Threshold</span><span id="threshVal">230</span></label>
+                        <input type="range" id="threshSlider" min="100" max="255" value="230" oninput="document.getElementById('threshVal').textContent=this.value">
+                    </div>
+                    <button class="tool-btn" onclick="removeBackground()">Remove Background</button>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Actions -->
+            <div class="tool-group">
+                <h4>Actions</h4>
+                <div class="tool-btn-row">
+                    <button class="tool-btn" onclick="deleteSelected()">Delete Layer</button>
+                    <button class="tool-btn" onclick="clearDesign()">Clear All</button>
+                </div>
+                <button class="btn-export disabled" style="margin-top:10px" onclick="orderNow()" disabled>Order Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Preview Panel -->
+    <div class="preview-panel">
+        <div class="back-link">
+            <a href="index.html">&larr; Back to Site</a>
+        </div>
+
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <img class="tshirt-img" id="tshirtImg" src="tees/5001_STAPLE_TEE_BLACK.jpg" alt="T-Shirt">
+            <canvas id="designCanvas"></canvas>
+        </div>
+
+        <div class="product-info">
+            <div class="product-name">5001 Staple Tee — <span id="colorName">Black</span></div>
+            <div class="product-detail">Premium 5.3oz Cotton &bull; $12.99/tee &bull; Shipping $9.99 + $1/ea</div>
+            <div class="size-qty-row">
+                <div class="size-qty-box"><label>S</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>M</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>L</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>XL</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>2XL</label><input type="number" min="0" value="0" placeholder="0"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Upload Button (visible only on mobile) -->
+    <button class="mobile-upload-btn" id="mobileUploadBtn" onclick="document.getElementById('fileInput').click()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload Artwork
+    </button>
+
+    <!-- Mobile Order Button -->
+    <button class="mobile-order-btn disabled" id="mobileOrderBtn" onclick="orderNow()">Order Now</button>
+
+    <!-- CART PANEL (slides in from right) -->
+    <div class="cart-panel" id="cartPanel">
+        <div class="cart-header">
+            <h3>Your Order</h3>
+            <button class="cart-close" onclick="closeCart()">&times;</button>
+        </div>
+        <div class="cart-body">
+            <div class="cart-preview">
+                <canvas id="cartPreviewCanvas"></canvas>
+            </div>
+            <div class="cart-product-name" id="cartProductName"></div>
+            <div class="cart-product-detail" id="cartProductDetail"></div>
+            <div class="cart-line-items" id="cartLineItems"></div>
+            <div class="cart-divider"></div>
+            <div class="cart-total-row">
+                <span class="total-label">Total</span>
+                <span class="total-value" id="cartTotal"></span>
+            </div>
+            <div class="cart-qty-summary" id="cartQtySummary"></div>
+        </div>
+        <div class="cart-footer">
+            <button class="btn-checkout" onclick="checkout()">Checkout</button>
+            <button class="btn-back-edit" onclick="closeCart()">Back to Editor</button>
+        </div>
+    </div>
+</div>
+
+<!-- Stripe Embedded Checkout Modal -->
+<div class="checkout-overlay" id="checkoutOverlay">
+    <div class="checkout-modal">
+        <div class="checkout-modal-header">
+            <h3>Secure Checkout</h3>
+            <button class="checkout-modal-close" onclick="closeCheckoutModal()">&times;</button>
+        </div>
+        <div id="checkout-container">
+            <div class="checkout-loading" id="checkoutLoading">Loading checkout...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Top Bar with centered logo -->
+<div class="mobile-top-bar">
+    <a href="index.html"><img src="Diner 1C purple.png" alt="Six Thirteen"></a>
+</div>
+
+<script>
+    // ==============================
+    // Collapsible Tool Groups
+    // ==============================
+    // Stripe Publishable Key — fetched from server /config
+    // ==============================
+    window.STRIPE_PK = null;
+    fetch('/config')
+        .then(r => r.json())
+        .then(cfg => { window.STRIPE_PK = cfg.publishableKey; })
+        .catch(() => { console.warn('Could not load Stripe config. Run: npm start'); });
+
+    // ==============================
+    function toggleGroup(toggleEl) {
+        toggleEl.closest('.tool-group').classList.toggle('collapsed');
+    }
+
+    // ==============================
+    // Mobile Drawer
+    // ==============================
+    function toggleMobileDrawer() {
+        const panel = document.getElementById('optionsPanel');
+        const btn = document.getElementById('mobileMenuBtn');
+        const overlay = document.getElementById('mobileOverlay');
+        const isOpen = panel.classList.contains('drawer-open');
+        if (isOpen) {
+            closeMobileDrawer();
+        } else {
+            panel.classList.add('drawer-open');
+            btn.classList.add('is-open');
+            overlay.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    function closeMobileDrawer() {
+        const panel = document.getElementById('optionsPanel');
+        const btn = document.getElementById('mobileMenuBtn');
+        const overlay = document.getElementById('mobileOverlay');
+        panel.classList.remove('drawer-open');
+        btn.classList.remove('is-open');
+        overlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+
+    // ==============================
+    // Order Button State (grayed out until artwork + qty)
+    // ==============================
+    function updateOrderBtn() {
+        const hasArt = (typeof layers !== 'undefined') && layers.length > 0;
+        const sizeInputs = document.querySelectorAll('.size-qty-box input');
+        let totalQty = 0;
+        sizeInputs.forEach(inp => { totalQty += (parseInt(inp.value) || 0); });
+        const ready = hasArt && totalQty > 0;
+
+        // Mobile button
+        const mobileBtn = document.getElementById('mobileOrderBtn');
+        if (mobileBtn) {
+            if (ready) { mobileBtn.classList.remove('disabled'); mobileBtn.removeAttribute('disabled'); }
+            else { mobileBtn.classList.add('disabled'); mobileBtn.setAttribute('disabled', 'true'); }
+        }
+        // Desktop button
+        const desktopBtn = document.querySelector('.btn-export');
+        if (desktopBtn) {
+            if (ready) { desktopBtn.classList.remove('disabled'); desktopBtn.removeAttribute('disabled'); }
+            else { desktopBtn.classList.add('disabled'); desktopBtn.setAttribute('disabled', 'true'); }
+        }
+
+        // Update mobile upload btn text if artwork is loaded
+        const uploadBtn = document.getElementById('mobileUploadBtn');
+        if (uploadBtn) {
+            if (hasArt) {
+                uploadBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Replace Artwork';
+            } else {
+                uploadBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload Artwork';
+            }
+        }
+    }
+
+    // Listen to qty changes
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.size-qty-box input').forEach(inp => {
+            inp.addEventListener('input', updateOrderBtn);
+        });
+        updateOrderBtn();
+    });
+
+    // ==============================
+    // Designer Engine — Multi-Layer
+    // ==============================
+    const canvas = document.getElementById('designCanvas');
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('canvasWrapper');
+    const tshirtImg = document.getElementById('tshirtImg');
+
+    let layers = [];
+    let selectedIdx = -1;
+    let isDragging = false;
+    let isResizing = false;
+    let isRotating = false;
+    let rotateStartAngle = 0;
+    let rotateStartRotation = 0;
+    let resizeCorner = null;
+    let dragOX = 0, dragOY = 0;
+    let resizeStartX = 0, resizeStartY = 0;
+    let resizeStartW = 0, resizeStartH = 0;
+    let resizeStartImgX = 0, resizeStartImgY = 0;
+    const HANDLE_SIZE = 10;
+    const HANDLE_HIT = 16;
+    const ROTATE_HANDLE_DIST = 28;
+    let showBounds = false;
+    let textColor = '#000000';
+
+    function sel() { return selectedIdx >= 0 ? layers[selectedIdx] : null; }
+
+    function sizeCanvas() {
+        const rect = wrapper.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        render();
+    }
+
+    window.addEventListener('resize', sizeCanvas);
+    tshirtImg.addEventListener('load', sizeCanvas);
+    sizeCanvas();
+
+    function getPrintZone() {
+        const cw = canvas.width, ch = canvas.height;
+        return { x: cw * 0.30, y: ch * 0.22, w: cw * 0.40, h: ch * 0.40 };
+    }
+
+    function addLayer(img, baseScale) {
+        const zone = getPrintZone();
+        const bs = baseScale || Math.min(zone.w / img.width, zone.h / img.height, 1);
+        const w = img.width * bs;
+        const h = img.height * bs;
+        const layer = {
+            img, original: img,
+            x: zone.x + (zone.w - w) / 2,
+            y: zone.y + (zone.h - h) / 2,
+            w, h, rotation: 0, baseScale: bs
+        };
+        layers.push(layer);
+        selectedIdx = layers.length - 1;
+        syncSliders();
+        render();
+        updateOrderBtn();
+    }
+
+    function syncSliders() {
+        const l = sel();
+        if (l) {
+            const pct = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
+            document.getElementById('sizeSlider').value = Math.min(250, Math.max(20, pct));
+            document.getElementById('sizeVal').textContent = pct + '%';
+            document.getElementById('rotSlider').value = l.rotation;
+            document.getElementById('rotVal').textContent = l.rotation + '°';
+        } else {
+            document.getElementById('sizeSlider').value = 100;
+            document.getElementById('sizeVal').textContent = '100%';
+            document.getElementById('rotSlider').value = 0;
+            document.getElementById('rotVal').textContent = '0°';
+        }
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        layers.forEach((layer, idx) => {
+            ctx.save();
+            const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
+            ctx.translate(cx, cy);
+            ctx.rotate((layer.rotation * Math.PI) / 180);
+            ctx.drawImage(layer.img, -layer.w / 2, -layer.h / 2, layer.w, layer.h);
+
+            if (showBounds && idx === selectedIdx) {
+                ctx.strokeStyle = 'rgba(122,53,248,0.6)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([6, 4]);
+                ctx.strokeRect(-layer.w / 2 - 2, -layer.h / 2 - 2, layer.w + 4, layer.h + 4);
+                ctx.setLineDash([]);
+                const hs = HANDLE_SIZE;
+                ctx.fillStyle = '#7a35f8';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                [[-layer.w/2, -layer.h/2],[layer.w/2, -layer.h/2],
+                 [-layer.w/2, layer.h/2],[layer.w/2, layer.h/2]].forEach(([cx2, cy2]) => {
+                    ctx.fillRect(cx2 - hs/2, cy2 - hs/2, hs, hs);
+                    ctx.strokeRect(cx2 - hs/2, cy2 - hs/2, hs, hs);
+                });
+                // Rotation handle — circle above top center
+                const rotY = -layer.h/2 - ROTATE_HANDLE_DIST;
+                ctx.beginPath();
+                ctx.moveTo(0, -layer.h/2 - 2);
+                ctx.lineTo(0, rotY + 6);
+                ctx.strokeStyle = 'rgba(122,53,248,0.5)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(0, rotY, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#7a35f8';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            } else if (showBounds && idx !== selectedIdx) {
+                ctx.strokeStyle = 'rgba(122,53,248,0.2)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 6]);
+                ctx.strokeRect(-layer.w / 2 - 2, -layer.h / 2 - 2, layer.w + 4, layer.h + 4);
+                ctx.setLineDash([]);
+            }
+            ctx.restore();
+        });
+    }
+
+    // Shirt swap
+    function setShirt(el) {
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        tshirtImg.src = el.dataset.img;
+        document.getElementById('colorName').textContent = el.dataset.name || '';
+    }
+
+    // Upload
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#7a35f8'; });
+    uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#e0e0e0'; });
+    uploadArea.addEventListener('drop', e => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#e0e0e0';
+        if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', e => { if (e.target.files[0]) loadImage(e.target.files[0]); });
+
+    function loadImage(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() { addLayer(img); };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Stock Art (Pixabay)
+    const PIXABAY_KEY = '54458838-3fd98cc3ef3d03cbceb5912a7';
+    let stockQuery = '';
+    let stockPage = 1;
+    let stockTotal = 0;
+
+    function searchStock() {
+        const q = document.getElementById('stockSearchInput').value.trim();
+        if (!q) return;
+        stockQuery = q;
+        stockPage = 1;
+        document.querySelectorAll('.stock-cat-pill').forEach(p => p.classList.remove('active'));
+        fetchStock();
+    }
+
+    function searchStockCategory(el, query) {
+        document.querySelectorAll('.stock-cat-pill').forEach(p => p.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('stockSearchInput').value = '';
+        stockQuery = query;
+        stockPage = 1;
+        fetchStock();
+    }
+
+    function loadMoreStock() { stockPage++; fetchStock(true); }
+
+    function fetchStock(append) {
+        const grid = document.getElementById('stockResults');
+        const btn = document.getElementById('stockLoadMore');
+        if (!append) { grid.innerHTML = '<div class="stock-spinner"></div>'; btn.style.display = 'none'; }
+        const url = `https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(stockQuery)}&image_type=illustration&per_page=12&page=${stockPage}&safesearch=true`;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                stockTotal = data.totalHits || 0;
+                if (!append) grid.innerHTML = '';
+                if (data.hits && data.hits.length) {
+                    data.hits.forEach(hit => {
+                        const thumb = document.createElement('div');
+                        thumb.className = 'stock-thumb';
+                        thumb.innerHTML = `<img src="${hit.webformatURL}" alt="${hit.tags}" loading="lazy">`;
+                        thumb.onclick = () => addStockImage(hit.largeImageURL);
+                        grid.appendChild(thumb);
+                    });
+                    btn.style.display = (stockPage * 12 < stockTotal) ? 'block' : 'none';
+                } else if (!append) {
+                    grid.innerHTML = '<div class="stock-empty">No results found</div>';
+                }
+            })
+            .catch(() => { if (!append) grid.innerHTML = '<div class="stock-empty">Search failed — try again</div>'; });
+    }
+
+    function addStockImage(url) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() { addLayer(img); };
+        img.onerror = function() { alert('Could not load image'); };
+        img.src = url;
+    }
+
+    // ==============================
+    // Text with Curve
+    // ==============================
+    function updateText() {
+        document.getElementById('fontSizeVal').textContent = document.getElementById('fontSizeSlider').value + 'px';
+        document.getElementById('kerningVal').textContent = document.getElementById('kerningSlider').value + 'px';
+        document.getElementById('curveVal').textContent = document.getElementById('curveSlider').value + '°';
+    }
+
+    function setTextColor(el) {
+        document.querySelectorAll('.text-color-swatch').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        textColor = el.dataset.color;
+    }
+
+    async function addTextToCanvas() {
+        const text = document.getElementById('textInput').value;
+        if (!text) return;
+        const fontFamily = document.getElementById('fontSelect').value;
+        const fontSize = parseInt(document.getElementById('fontSizeSlider').value);
+        const kerning = parseInt(document.getElementById('kerningSlider').value);
+        const curveDeg = parseInt(document.getElementById('curveSlider').value);
+        const padding = 40;
+
+        // Ensure the selected Google Font is fully loaded before drawing
+        try {
+            await document.fonts.load(`700 ${fontSize}px '${fontFamily}'`);
+        } catch(e) { /* proceed anyway */ }
+
+        const off = document.createElement('canvas');
+        const oCtx = off.getContext('2d');
+
+        oCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+        let totalW = 0;
+        for (let i = 0; i < text.length; i++) {
+            totalW += oCtx.measureText(text[i]).width + (i < text.length - 1 ? kerning : 0);
+        }
+
+        if (curveDeg === 0) {
+            off.width = totalW + padding * 2;
+            off.height = fontSize * 1.5 + padding * 2;
+            oCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+            oCtx.fillStyle = textColor;
+            oCtx.textBaseline = 'middle';
+            let xPos = padding;
+            const yPos = off.height / 2;
+            for (let i = 0; i < text.length; i++) {
+                oCtx.fillText(text[i], xPos, yPos);
+                xPos += oCtx.measureText(text[i]).width + kerning;
+            }
+        } else {
+            const arcAngle = (Math.abs(curveDeg) * Math.PI) / 180;
+            const radius = totalW / arcAngle;
+            const dim = (radius + fontSize) * 2 + padding * 2;
+            off.width = dim; off.height = dim;
+            oCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+            oCtx.fillStyle = textColor;
+            oCtx.textBaseline = 'middle';
+            oCtx.textAlign = 'center';
+            const centerX = dim / 2;
+            const centerY = curveDeg > 0 ? dim / 2 + radius : dim / 2 - radius;
+            const startAngle = curveDeg > 0 ? -Math.PI / 2 - arcAngle / 2 : Math.PI / 2 + arcAngle / 2;
+            let currentAngle = startAngle;
+            for (let i = 0; i < text.length; i++) {
+                const charW = oCtx.measureText(text[i]).width + (i < text.length - 1 ? kerning : 0);
+                const halfCharAngle = (charW / 2) / radius;
+                currentAngle += curveDeg > 0 ? halfCharAngle : -halfCharAngle;
+                oCtx.save();
+                oCtx.translate(centerX, centerY);
+                oCtx.rotate(currentAngle);
+                oCtx.fillText(text[i], 0, curveDeg > 0 ? -radius : radius);
+                oCtx.restore();
+                currentAngle += curveDeg > 0 ? halfCharAngle : -halfCharAngle;
+            }
+        }
+
+        const trimmed = trimCanvas(off);
+        const img = new Image();
+        img.onload = function() { addLayer(img); };
+        img.src = trimmed.toDataURL();
+    }
+
+    function trimCanvas(c) {
+        const ctx2 = c.getContext('2d');
+        const pixels = ctx2.getImageData(0, 0, c.width, c.height);
+        const d = pixels.data;
+        let top = c.height, left = c.width, right = 0, bottom = 0;
+        for (let y = 0; y < c.height; y++) {
+            for (let x = 0; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
+                if (d[idx + 3] > 0) {
+                    if (y < top) top = y;
+                    if (y > bottom) bottom = y;
+                    if (x < left) left = x;
+                    if (x > right) right = x;
+                }
+            }
+        }
+        if (right <= left || bottom <= top) return c;
+        const pad = 10;
+        const trimW = right - left + 1 + pad * 2;
+        const trimH = bottom - top + 1 + pad * 2;
+        const trimmed = document.createElement('canvas');
+        trimmed.width = trimW; trimmed.height = trimH;
+        trimmed.getContext('2d').drawImage(c, left - pad, top - pad, trimW, trimH, 0, 0, trimW, trimH);
+        return trimmed;
+    }
+
+    // Transform
+    function resizeDesign(val) {
+        const l = sel(); if (!l) return;
+        const scale = val / 100;
+        const ocx = l.x + l.w / 2, ocy = l.y + l.h / 2;
+        l.w = l.original.width * l.baseScale * scale;
+        l.h = l.original.height * l.baseScale * scale;
+        l.x = ocx - l.w / 2;
+        l.y = ocy - l.h / 2;
+        document.getElementById('sizeVal').textContent = val + '%';
+        render();
+    }
+
+    function rotateDesign(val) {
+        const l = sel(); if (!l) return;
+        l.rotation = parseInt(val);
+        document.getElementById('rotVal').textContent = val + '°';
+        render();
+    }
+
+    // Background removal
+    function removeBackground() {
+        const l = sel(); if (!l) return;
+        const off = document.createElement('canvas');
+        off.width = l.img.naturalWidth || l.img.width;
+        off.height = l.img.naturalHeight || l.img.height;
+        const oCtx = off.getContext('2d');
+        oCtx.drawImage(l.img, 0, 0);
+        let imageData;
+        try { imageData = oCtx.getImageData(0, 0, off.width, off.height); }
+        catch (e) {
+            try {
+                const proxy = document.createElement('canvas');
+                proxy.width = off.width; proxy.height = off.height;
+                imageData = proxy.getContext('2d').getImageData(0, 0, proxy.width, proxy.height);
+            } catch (e2) {
+                alert('Cannot remove background on this image due to cross-origin restrictions.');
+                return;
+            }
+        }
+        const d = imageData.data;
+        const thresh = parseInt(document.getElementById('threshSlider').value);
+        const tolerance = Math.round((255 - thresh) * 1.5);
+        const w = off.width, h = off.height;
+        const corners = [[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+        let sr = 0, sg = 0, sb = 0, count = 0;
+        corners.forEach(([cx, cy]) => {
+            const idx = (cy * w + cx) * 4;
+            if (d[idx + 3] > 0) { sr += d[idx]; sg += d[idx+1]; sb += d[idx+2]; count++; }
+        });
+        if (count === 0) { render(); return; }
+        const bgR = Math.round(sr / count), bgG = Math.round(sg / count), bgB = Math.round(sb / count);
+        for (let i = 0; i < d.length; i += 4) {
+            if (d[i+3] === 0) continue;
+            const dr = d[i] - bgR, dg = d[i+1] - bgG, db = d[i+2] - bgB;
+            const dist = Math.sqrt(dr*dr + dg*dg + db*db);
+            if (dist < tolerance) {
+                d[i+3] = dist < tolerance * 0.5 ? 0 : Math.round((dist / tolerance) * 255);
+            }
+        }
+        oCtx.putImageData(imageData, 0, 0);
+        const img = new Image();
+        img.onload = function() { l.img = img; render(); };
+        img.src = off.toDataURL();
+    }
+
+    // ==============================
+    // Hit Testing & Interaction
+    // ==============================
+    function getCornerPositions(layer) {
+        const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
+        const rad = (layer.rotation * Math.PI) / 180;
+        const cos = Math.cos(rad), sin = Math.sin(rad);
+        const hw = layer.w / 2, hh = layer.h / 2;
+        return [
+            { key: 'tl', x: cx + (-hw)*cos - (-hh)*sin, y: cy + (-hw)*sin + (-hh)*cos },
+            { key: 'tr', x: cx + ( hw)*cos - (-hh)*sin, y: cy + ( hw)*sin + (-hh)*cos },
+            { key: 'bl', x: cx + (-hw)*cos - ( hh)*sin, y: cy + (-hw)*sin + ( hh)*cos },
+            { key: 'br', x: cx + ( hw)*cos - ( hh)*sin, y: cy + ( hw)*sin + ( hh)*cos },
+        ];
+    }
+
+    function getRotateHandlePos(layer) {
+        const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
+        const rad = (layer.rotation * Math.PI) / 180;
+        const offY = -(layer.h / 2 + ROTATE_HANDLE_DIST);
+        return { x: cx + offY * Math.sin(rad) * -1, y: cy + offY * Math.cos(rad) };
+    }
+
+    function hitTestRotate(mx, my) {
+        const l = sel(); if (!l) return false;
+        const rh = getRotateHandlePos(l);
+        return Math.hypot(mx - rh.x, my - rh.y) <= HANDLE_HIT;
+    }
+
+    function hitTestCorner(mx, my) {
+        const l = sel(); if (!l) return null;
+        const corners = getCornerPositions(l);
+        for (const c of corners) {
+            if (Math.abs(mx - c.x) <= HANDLE_HIT && Math.abs(my - c.y) <= HANDLE_HIT) return c.key;
+        }
+        return null;
+    }
+
+    function hitTestLayer(mx, my, layer) {
+        return mx >= layer.x && mx <= layer.x + layer.w && my >= layer.y && my <= layer.y + layer.h;
+    }
+
+    function findLayerAt(mx, my) {
+        for (let i = layers.length - 1; i >= 0; i--) {
+            if (hitTestLayer(mx, my, layers[i])) return i;
+        }
+        return -1;
+    }
+
+    function getResizeCursor(corner) {
+        if (corner === 'rotate') return 'grab';
+        if (corner === 'tl' || corner === 'br') return 'nwse-resize';
+        if (corner === 'tr' || corner === 'bl') return 'nesw-resize';
+        return 'default';
+    }
+
+    function getCanvasCoords(e, rect) {
+        const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+        const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+        const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+        return { mx: (clientX - rect.left) * sx, my: (clientY - rect.top) * sy };
+    }
+
+    canvas.addEventListener('mouseenter', () => { if (layers.length) { showBounds = true; render(); } });
+    canvas.addEventListener('mouseleave', () => { if (!isDragging && !isResizing && !isRotating) { showBounds = false; render(); } });
+
+    canvas.addEventListener('mousedown', e => {
+        if (!layers.length) return;
+        const rect = canvas.getBoundingClientRect();
+        const { mx, my } = getCanvasCoords(e, rect);
+        if (selectedIdx >= 0) {
+            if (hitTestRotate(mx, my)) {
+                const l = sel();
+                isRotating = true;
+                const cx = l.x + l.w / 2, cy = l.y + l.h / 2;
+                rotateStartAngle = Math.atan2(my - cy, mx - cx);
+                rotateStartRotation = l.rotation;
+                return;
+            }
+            const corner = hitTestCorner(mx, my);
+            if (corner) {
+                const l = sel();
+                isResizing = true; resizeCorner = corner;
+                resizeStartX = mx; resizeStartY = my;
+                resizeStartW = l.w; resizeStartH = l.h;
+                resizeStartImgX = l.x; resizeStartImgY = l.y;
+                return;
+            }
+        }
+        const hit = findLayerAt(mx, my);
+        if (hit >= 0) {
+            selectedIdx = hit; syncSliders();
+            isDragging = true;
+            dragOX = mx - layers[hit].x; dragOY = my - layers[hit].y;
+            render(); return;
+        }
+        selectedIdx = -1; syncSliders(); render();
+    });
+
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        const { mx, my } = getCanvasCoords(e, rect);
+        if (!isDragging && !isResizing && !isRotating) {
+            if (hitTestRotate(mx, my)) { canvas.style.cursor = 'grab'; }
+            else {
+                const corner = hitTestCorner(mx, my);
+                if (corner) { canvas.style.cursor = getResizeCursor(corner); }
+                else if (findLayerAt(mx, my) >= 0) { canvas.style.cursor = 'grab'; }
+                else { canvas.style.cursor = 'default'; }
+            }
+        }
+        if (isRotating && selectedIdx >= 0) {
+            canvas.style.cursor = 'grabbing';
+            const l = sel();
+            const cx = l.x + l.w / 2, cy = l.y + l.h / 2;
+            const currentAngle = Math.atan2(my - cy, mx - cx);
+            const delta = (currentAngle - rotateStartAngle) * (180 / Math.PI);
+            l.rotation = rotateStartRotation + delta;
+            document.getElementById('rotSlider').value = ((l.rotation % 360) + 360) % 360;
+            document.getElementById('rotVal').textContent = Math.round(((l.rotation % 360) + 360) % 360) + '°';
+            render(); return;
+        }
+        if (isResizing && selectedIdx >= 0) {
+            const l = sel();
+            const dx = mx - resizeStartX, dy = my - resizeStartY;
+            const aspect = resizeStartW / resizeStartH;
+            const rawDelta = (resizeCorner === 'br') ? (dx + dy) / 2
+                : (resizeCorner === 'tl') ? -(dx + dy) / 2
+                : (resizeCorner === 'tr') ? (dx - dy) / 2 : (-dx + dy) / 2;
+            let newW = resizeStartW + rawDelta;
+            let newH = newW / aspect;
+            if (newW < 20) { newW = 20; newH = newW / aspect; }
+            if (resizeCorner === 'br') { l.x = resizeStartImgX; l.y = resizeStartImgY; }
+            else if (resizeCorner === 'tl') { l.x = resizeStartImgX + resizeStartW - newW; l.y = resizeStartImgY + resizeStartH - newH; }
+            else if (resizeCorner === 'tr') { l.x = resizeStartImgX; l.y = resizeStartImgY + resizeStartH - newH; }
+            else { l.x = resizeStartImgX + resizeStartW - newW; l.y = resizeStartImgY; }
+            l.w = newW; l.h = newH;
+            const pct = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
+            document.getElementById('sizeSlider').value = Math.min(250, Math.max(20, pct));
+            document.getElementById('sizeVal').textContent = pct + '%';
+            render(); return;
+        }
+        if (isDragging && selectedIdx >= 0) {
+            canvas.style.cursor = 'grabbing';
+            const l = sel();
+            l.x = mx - dragOX; l.y = my - dragOY;
+            render();
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => { isDragging = false; isResizing = false; isRotating = false; resizeCorner = null; });
+    canvas.addEventListener('mouseleave', () => { isDragging = false; isResizing = false; isRotating = false; resizeCorner = null; showBounds = false; render(); });
+
+    // Touch events
+    canvas.addEventListener('touchstart', e => {
+        if (!layers.length) return; e.preventDefault();
+        showBounds = true;
+        const rect = canvas.getBoundingClientRect();
+        const { mx, my } = getCanvasCoords(e, rect);
+        if (selectedIdx >= 0) {
+            if (hitTestRotate(mx, my)) {
+                const l = sel();
+                isRotating = true;
+                const cx = l.x + l.w / 2, cy = l.y + l.h / 2;
+                rotateStartAngle = Math.atan2(my - cy, mx - cx);
+                rotateStartRotation = l.rotation;
+                render(); return;
+            }
+            const corner = hitTestCorner(mx, my);
+            if (corner) {
+                const l = sel();
+                isResizing = true; resizeCorner = corner;
+                resizeStartX = mx; resizeStartY = my;
+                resizeStartW = l.w; resizeStartH = l.h;
+                resizeStartImgX = l.x; resizeStartImgY = l.y;
+                render(); return;
+            }
+        }
+        const hit = findLayerAt(mx, my);
+        if (hit >= 0) {
+            selectedIdx = hit; syncSliders();
+            isDragging = true;
+            dragOX = mx - layers[hit].x; dragOY = my - layers[hit].y;
+            render(); return;
+        }
+        selectedIdx = -1; syncSliders(); render();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', e => {
+        if (!isDragging && !isResizing && !isRotating) return; e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const { mx, my } = getCanvasCoords(e, rect);
+        if (isRotating && selectedIdx >= 0) {
+            const l = sel();
+            const cx = l.x + l.w / 2, cy = l.y + l.h / 2;
+            const currentAngle = Math.atan2(my - cy, mx - cx);
+            const delta = (currentAngle - rotateStartAngle) * (180 / Math.PI);
+            l.rotation = rotateStartRotation + delta;
+            document.getElementById('rotSlider').value = ((l.rotation % 360) + 360) % 360;
+            document.getElementById('rotVal').textContent = Math.round(((l.rotation % 360) + 360) % 360) + '°';
+            render(); return;
+        }
+        if (isResizing && selectedIdx >= 0) {
+            const l = sel();
+            const dx = mx - resizeStartX, dy = my - resizeStartY;
+            const aspect = resizeStartW / resizeStartH;
+            const rawDelta = (resizeCorner === 'br') ? (dx + dy) / 2
+                : (resizeCorner === 'tl') ? -(dx + dy) / 2
+                : (resizeCorner === 'tr') ? (dx - dy) / 2 : (-dx + dy) / 2;
+            let newW = resizeStartW + rawDelta, newH = newW / aspect;
+            if (newW < 20) { newW = 20; newH = newW / aspect; }
+            if (resizeCorner === 'br') { l.x = resizeStartImgX; l.y = resizeStartImgY; }
+            else if (resizeCorner === 'tl') { l.x = resizeStartImgX + resizeStartW - newW; l.y = resizeStartImgY + resizeStartH - newH; }
+            else if (resizeCorner === 'tr') { l.x = resizeStartImgX; l.y = resizeStartImgY + resizeStartH - newH; }
+            else { l.x = resizeStartImgX + resizeStartW - newW; l.y = resizeStartImgY; }
+            l.w = newW; l.h = newH;
+            const pct = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
+            document.getElementById('sizeSlider').value = Math.min(250, Math.max(20, pct));
+            document.getElementById('sizeVal').textContent = pct + '%';
+            render(); return;
+        }
+        if (isDragging && selectedIdx >= 0) {
+            const l = sel();
+            l.x = mx - dragOX; l.y = my - dragOY;
+            render();
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => { isDragging = false; isResizing = false; isRotating = false; resizeCorner = null; showBounds = false; render(); });
+
+    // Delete / Clear
+    function deleteSelected() {
+        if (selectedIdx < 0) return;
+        layers.splice(selectedIdx, 1);
+        selectedIdx = layers.length ? Math.min(selectedIdx, layers.length - 1) : -1;
+        syncSliders(); render(); updateOrderBtn();
+    }
+
+    function clearDesign() { layers = []; selectedIdx = -1; syncSliders(); render(); updateOrderBtn(); }
+
+    // Pricing
+    const PRICE_PER_TEE = 12.99;
+    const SHIPPING_BASE = 9.99;    // first shirt
+    const SHIPPING_EXTRA = 1.00;   // each additional shirt
+
+    function calcShipping(qty) {
+        return SHIPPING_BASE + Math.max(0, qty - 1) * SHIPPING_EXTRA;
+    }
+
+    function orderNow() {
+        // Require artwork
+        if (layers.length === 0) {
+            alert('Artwork is required. Please upload an image, add text, or choose stock art before ordering.');
+            return;
+        }
+
+        // Collect size quantities
+        const sizeInputs = document.querySelectorAll('.size-qty-box input');
+        const sizes = ['S', 'M', 'L', 'XL', '2XL'];
+        const order = {};
+        let totalQty = 0;
+        sizeInputs.forEach((input, i) => {
+            const qty = parseInt(input.value) || 0;
+            if (qty > 0) { order[sizes[i]] = qty; totalQty += qty; }
+        });
+        if (totalQty === 0) {
+            alert('Please enter quantities for at least one size.');
+            return;
+        }
+
+        // Generate preview image on cart canvas
+        const cartCanvas = document.getElementById('cartPreviewCanvas');
+        const cCtx = cartCanvas.getContext('2d');
+        const previewSize = 600;
+        cartCanvas.width = previewSize;
+        cartCanvas.height = Math.round(previewSize * (canvas.height / canvas.width));
+        cartCanvas.style.width = '100%';
+        cartCanvas.style.display = 'block';
+        cCtx.drawImage(tshirtImg, 0, 0, cartCanvas.width, cartCanvas.height);
+        const scX = cartCanvas.width / canvas.width, scY = cartCanvas.height / canvas.height;
+        layers.forEach(l => {
+            const cx = (l.x + l.w / 2) * scX, cy = (l.y + l.h / 2) * scY;
+            const w = l.w * scX, h = l.h * scY;
+            cCtx.save();
+            cCtx.translate(cx, cy);
+            cCtx.rotate((l.rotation * Math.PI) / 180);
+            cCtx.drawImage(l.img, -w / 2, -h / 2, w, h);
+            cCtx.restore();
+        });
+
+        // Populate cart info
+        const colorName = document.getElementById('colorName').textContent;
+        document.getElementById('cartProductName').textContent = `5001 Staple Tee — ${colorName}`;
+        document.getElementById('cartProductDetail').textContent = `$${PRICE_PER_TEE.toFixed(2)} per tee`;
+
+        // Build line items
+        const lineItemsEl = document.getElementById('cartLineItems');
+        lineItemsEl.innerHTML = '';
+
+        const subtotal = totalQty * PRICE_PER_TEE;
+        const shipping = calcShipping(totalQty);
+
+        Object.entries(order).forEach(([size, qty]) => {
+            const lineTotal = (qty * PRICE_PER_TEE).toFixed(2);
+            const line = document.createElement('div');
+            line.className = 'cart-line';
+            line.innerHTML = `<span class="size-label">${size}</span><span class="qty-label">&times; ${qty} @ $${PRICE_PER_TEE.toFixed(2)}</span><span class="line-price">$${lineTotal}</span>`;
+            lineItemsEl.appendChild(line);
+        });
+
+        // Shipping line
+        const shipLine = document.createElement('div');
+        shipLine.className = 'cart-line';
+        const shipDetail = totalQty === 1 ? 'Flat rate' : `$${SHIPPING_BASE.toFixed(2)} + $${SHIPPING_EXTRA.toFixed(2)} &times; ${totalQty - 1} extra`;
+        shipLine.innerHTML = `<span class="size-label">Shipping</span><span class="qty-label">${shipDetail}</span><span class="line-price">$${shipping.toFixed(2)}</span>`;
+        lineItemsEl.appendChild(shipLine);
+
+        // Totals
+        const grandTotal = subtotal + shipping;
+        document.getElementById('cartTotal').textContent = `$${grandTotal.toFixed(2)}`;
+        document.getElementById('cartQtySummary').textContent = `${totalQty} tee${totalQty !== 1 ? 's' : ''} + shipping`;
+
+        // Store order data for checkout
+        window._orderData = { order, totalQty, subtotal, grandTotal };
+
+        // Slide sidebar out, cart in
+        document.querySelector('.configurator-page').classList.add('cart-open');
+    }
+
+    function closeCart() {
+        document.querySelector('.configurator-page').classList.remove('cart-open');
+    }
+
+    // ==============================
+    // Stripe Embedded Checkout
+    // ==============================
+    let stripeCheckoutInstance = null;
+
+    async function checkout() {
+        const d = window._orderData;
+        if (!d) return;
+
+        // Build items array for the server
+        const items = Object.entries(d.order).map(([size, quantity]) => ({ size, quantity }));
+        const shippingAmount = Math.round(calcShipping(d.totalQty) * 100); // cents
+
+        // Show the checkout modal
+        const overlay = document.getElementById('checkoutOverlay');
+        const container = document.getElementById('checkout-container');
+        const loading = document.getElementById('checkoutLoading');
+        overlay.classList.add('active');
+        container.innerHTML = '';
+        container.appendChild(loading);
+        loading.style.display = 'flex';
+        loading.textContent = 'Loading checkout...';
+
+        try {
+            // Create Checkout Session on our server
+            const res = await fetch('/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items, shippingAmount }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to create checkout session');
+            }
+
+            const { clientSecret } = await res.json();
+
+            // Clear container completely — Stripe requires no child nodes
+            container.innerHTML = '';
+
+            const stripe = Stripe(window.STRIPE_PK);
+            stripeCheckoutInstance = await stripe.initEmbeddedCheckout({ clientSecret });
+            stripeCheckoutInstance.mount('#checkout-container');
+
+        } catch (err) {
+            loading.style.display = 'none';
+            container.innerHTML = `<div class="checkout-error">
+                <p>${err.message}</p>
+                <p style="margin-top:12px;font-size:0.72rem;color:var(--grey)">Make sure the server is running: <code>npm start</code></p>
+            </div>`;
+        }
+    }
+
+    function closeCheckoutModal() {
+        const overlay = document.getElementById('checkoutOverlay');
+        overlay.classList.remove('active');
+        if (stripeCheckoutInstance) {
+            stripeCheckoutInstance.destroy();
+            stripeCheckoutInstance = null;
+        }
+        document.getElementById('checkout-container').innerHTML =
+            '<div class="checkout-loading" id="checkoutLoading">Loading checkout...</div>';
+    }
+
+    // Handle return from Stripe (session_id in URL)
+    (function checkReturn() {
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session_id');
+        if (!sessionId) return;
+
+        // Show confirmation
+        fetch(`/session-status?session_id=${sessionId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'complete') {
+                    const overlay = document.getElementById('checkoutOverlay');
+                    const container = document.getElementById('checkout-container');
+                    overlay.classList.add('active');
+                    container.innerHTML = `<div class="order-confirmed">
+                        <h2>Order Confirmed</h2>
+                        <p>Thank you for your order! A confirmation has been sent to <strong>${data.customer_email || 'your email'}</strong>.</p>
+                        <button class="btn-checkout" style="margin-top:24px;max-width:200px" onclick="closeCheckoutModal(); window.history.replaceState({}, '', window.location.pathname);">Continue</button>
+                    </div>`;
+                }
+            })
+            .catch(() => {});
+    })();
+
+    function exportDesign() {
+        const exp = document.createElement('canvas');
+        exp.width = 1200; exp.height = 1300;
+        const eCtx = exp.getContext('2d');
+        eCtx.drawImage(tshirtImg, 0, 0, 1200, 1300);
+        const scaleX = exp.width / canvas.width, scaleY = exp.height / canvas.height;
+        layers.forEach(l => {
+            const cx = (l.x + l.w / 2) * scaleX, cy = (l.y + l.h / 2) * scaleY;
+            const w = l.w * scaleX, h = l.h * scaleY;
+            eCtx.save();
+            eCtx.translate(cx, cy);
+            eCtx.rotate((l.rotation * Math.PI) / 180);
+            eCtx.drawImage(l.img, -w / 2, -h / 2, w, h);
+            eCtx.restore();
+        });
+        const link = document.createElement('a');
+        link.download = 'luxe-design.png';
+        link.href = exp.toDataURL();
+        link.click();
+    }
+</script>
+
+</body>
+</html>

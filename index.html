@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUXE — Premium Digital Print Partner for Apparel Brands</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Bebas+Neue&family=Playfair+Display:wght@700&family=Montserrat:wght@400;700;900&family=Raleway:wght@400;700;900&family=Roboto+Condensed:wght@700&family=Anton&family=Archivo+Black&family=Permanent+Marker&family=Lobster&family=Pacifico&family=Dancing+Script:wght@700&family=Sacramento&family=Great+Vibes&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #C9A96E;
+            --gold-light: #E8D5A8;
+            --gold-dark: #8B7342;
+            --black: #0a0a0a;
+            --dark: #111111;
+            --dark-2: #161616;
+            --dark-3: #1e1e1e;
+            --white: #ffffff;
+            --grey: #888888;
+            --light-grey: #cccccc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--black);
+            color: var(--white);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Futura Condensed', 'Futura-CondensedExtraBold', 'Oswald', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+            font-stretch: condensed;
+        }
+
+        h4 {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            z-index: 1000;
+            padding: 18px 0;
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(201, 169, 110, 0.1);
+            transition: all 0.4s ease;
+        }
+
+        nav.scrolled {
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom-color: rgba(201, 169, 110, 0.25);
+        }
+
+        nav .container { display: flex; justify-content: space-between; align-items: center; }
+
+        .logo {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 2rem; font-weight: 700;
+            letter-spacing: 12px;
+            text-decoration: none; color: var(--gold);
+            text-transform: uppercase;
+        }
+
+        .nav-links { display: flex; gap: 35px; align-items: center; }
+
+        .nav-links a {
+            color: var(--light-grey); text-decoration: none;
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 0.85rem; font-weight: 500;
+            letter-spacing: 3px; text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover { color: var(--gold); }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; position: relative; overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(201,169,110,0.07) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(201,169,110,0.04) 0%, transparent 50%);
+        }
+
+        #particles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        .hero-content { position: relative; z-index: 2; }
+
+        .hero-tag {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 0.85rem; letter-spacing: 6px;
+            text-transform: uppercase; color: var(--gold);
+            margin-bottom: 25px; font-weight: 500;
+            opacity: 0; animation: fadeUp 1s ease forwards 0.3s;
+        }
+
+        .hero h1 {
+            font-size: clamp(5rem,15vw,14rem);
+            font-weight: 700; letter-spacing: 20px;
+            line-height: 0.9; margin-bottom: 25px;
+            opacity: 0; animation: fadeUp 1s ease forwards 0.5s;
+            perspective: 600px;
+        }
+
+        .hero h1 span {
+            display: inline-block;
+            position: relative;
+            background: linear-gradient(
+                135deg,
+                #8B7342 0%, #C9A96E 15%, #FFF8E7 25%, #E8D5A8 35%,
+                #C9A96E 45%, #8B7342 55%, #C9A96E 65%, #FFF8E7 75%,
+                #E8D5A8 85%, #C9A96E 100%
+            );
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: diamondShimmer 4s ease-in-out infinite, luxe3d 6s ease-in-out infinite;
+            text-shadow: none;
+            filter: drop-shadow(0 4px 8px rgba(201,169,110,0.3))
+                    drop-shadow(0 8px 25px rgba(201,169,110,0.15));
+        }
+
+        .hero h1 span::before {
+            content: 'LUXE';
+            position: absolute;
+            top: 3px; left: 3px;
+            background: linear-gradient(135deg, #5a4a28, #3d3220);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            z-index: -1;
+            filter: blur(1px);
+        }
+
+
+        @keyframes diamondShimmer {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 100% 0%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes luxe3d {
+            0%, 100% { transform: rotateX(0deg) rotateY(0deg); }
+            25% { transform: rotateX(2deg) rotateY(-3deg); }
+            50% { transform: rotateX(-1deg) rotateY(3deg); }
+            75% { transform: rotateX(1.5deg) rotateY(-2deg); }
+        }
+
+
+        .hero-sub {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 1.2rem; color: var(--grey);
+            letter-spacing: 6px; text-transform: uppercase;
+            font-weight: 400; margin-bottom: 50px;
+            opacity: 0; animation: fadeUp 1s ease forwards 0.7s;
+        }
+
+        .btn-gold {
+            display: inline-block; padding: 16px 55px;
+            border: 1px solid var(--gold); color: var(--gold);
+            text-decoration: none; font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 0.9rem; letter-spacing: 4px;
+            text-transform: uppercase; font-weight: 600;
+            transition: all 0.4s ease; position: relative;
+            overflow: hidden; cursor: pointer;
+            background: transparent;
+            opacity: 0; animation: fadeUp 1s ease forwards 0.9s;
+        }
+
+        .btn-gold::before {
+            content: ''; position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: var(--gold); transition: left 0.4s ease; z-index: -1;
+        }
+
+        .btn-gold:hover { color: var(--black); }
+        .btn-gold:hover::before { left: 0; }
+
+        .btn-gold-solid {
+            display: inline-block; padding: 16px 55px;
+            background: var(--gold); border: 1px solid var(--gold);
+            color: var(--black); text-decoration: none;
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 0.9rem; letter-spacing: 4px;
+            text-transform: uppercase; font-weight: 600;
+            transition: all 0.4s ease; cursor: pointer;
+        }
+
+        .btn-gold-solid:hover { background: var(--gold-light); }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .gold-divider { width: 50px; height: 2px; background: var(--gold); margin: 0 auto 20px; }
+
+        /* Designer Section — WHITE background */
+        .designer-section {
+            padding: 100px 0 120px;
+            background: var(--white);
+            border-top: 1px solid rgba(201,169,110,0.15);
+        }
+
+        .designer-header { text-align: center; margin-bottom: 50px; }
+
+        .designer-header h2 {
+            font-size: 3.5rem; color: var(--black);
+            letter-spacing: 10px; margin-bottom: 10px;
+        }
+
+        .designer-header p {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            color: var(--grey); letter-spacing: 4px;
+            text-transform: uppercase; font-size: 0.9rem; font-weight: 400;
+        }
+
+        .designer-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 0;
+            min-height: 750px;
+        }
+
+        /* Tools Sidebar — dark sidebar on white */
+        .tools-sidebar {
+            background: var(--dark-2);
+            padding: 28px;
+            display: flex; flex-direction: column;
+            gap: 24px; overflow-y: auto;
+            max-height: 800px;
+        }
+
+        .tools-sidebar::-webkit-scrollbar { width: 4px; }
+        .tools-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .tools-sidebar::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 2px; }
+
+        .tool-group h4 {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 0.75rem; letter-spacing: 4px;
+            text-transform: uppercase; color: var(--gold);
+            margin-bottom: 12px; font-weight: 600;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(201,169,110,0.25);
+            padding: 24px 15px; text-align: center;
+            cursor: pointer; transition: all 0.3s ease;
+            background: rgba(201,169,110,0.02);
+        }
+
+        .upload-area:hover { border-color: var(--gold); background: rgba(201,169,110,0.06); }
+        .upload-area .upload-icon { font-size: 1.6rem; margin-bottom: 8px; display: block; color: var(--gold); }
+        .upload-area p { font-size: 0.78rem; color: var(--grey); letter-spacing: 0.5px; }
+        .upload-area input { display: none; }
+
+        .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .swatch {
+            width: 36px; height: 36px;
+            border: 2px solid rgba(255,255,255,0.1);
+            cursor: pointer; transition: all 0.3s ease; position: relative;
+        }
+
+        .swatch:hover { border-color: rgba(201,169,110,0.5); transform: scale(1.08); }
+        .swatch.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+
+        .stock-search {
+            display: flex; gap: 6px; margin-bottom: 8px;
+        }
+        .stock-search input {
+            flex: 1; background: var(--dark-3); border: 1px solid rgba(201,169,110,0.15);
+            color: #fff; padding: 7px 10px; font-size: 0.78rem; border-radius: 3px;
+            outline: none; font-family: 'Inter', sans-serif;
+        }
+        .stock-search input:focus { border-color: var(--gold); }
+        .stock-search button {
+            background: var(--gold); color: #000; border: none; padding: 7px 12px;
+            font-size: 0.72rem; cursor: pointer; font-weight: 600; letter-spacing: 0.5px;
+            text-transform: uppercase; font-family: 'Inter', sans-serif; border-radius: 3px;
+        }
+        .stock-categories {
+            display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;
+        }
+        .stock-cat-pill {
+            background: var(--dark-3); border: 1px solid rgba(201,169,110,0.12);
+            color: var(--grey); padding: 3px 9px; font-size: 0.65rem; cursor: pointer;
+            transition: all 0.2s ease; letter-spacing: 0.3px; font-family: 'Inter', sans-serif;
+            border-radius: 2px;
+        }
+        .stock-cat-pill:hover, .stock-cat-pill.active {
+            border-color: var(--gold); color: var(--gold); background: rgba(201,169,110,0.08);
+        }
+        .stock-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+            max-height: 280px; overflow-y: auto; margin-bottom: 6px;
+        }
+        .stock-grid::-webkit-scrollbar { width: 4px; }
+        .stock-grid::-webkit-scrollbar-track { background: var(--dark-2); }
+        .stock-grid::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.3); border-radius: 2px; }
+        .stock-thumb {
+            aspect-ratio: 1; overflow: hidden; cursor: pointer;
+            border: 1px solid rgba(201,169,110,0.08); background: var(--dark-3);
+            transition: all 0.2s ease; position: relative;
+        }
+        .stock-thumb img {
+            width: 100%; height: 100%; object-fit: cover;
+            transition: transform 0.2s ease;
+        }
+        .stock-thumb:hover { border-color: var(--gold); }
+        .stock-thumb:hover img { transform: scale(1.08); }
+        .stock-load-more {
+            width: 100%; background: var(--dark-3); border: 1px solid rgba(201,169,110,0.15);
+            color: var(--light-gold); padding: 6px; font-size: 0.68rem; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.8px; font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease; border-radius: 2px;
+        }
+        .stock-load-more:hover { border-color: var(--gold); background: rgba(201,169,110,0.08); }
+        .stock-attr {
+            font-size: 0.58rem; color: rgba(136,136,136,0.6); text-align: center;
+            margin-top: 6px; letter-spacing: 0.3px;
+        }
+        .stock-attr a { color: rgba(201,169,110,0.5); text-decoration: none; }
+        .stock-spinner {
+            display: flex; justify-content: center; padding: 20px 0;
+        }
+        .stock-spinner::after {
+            content: ''; width: 20px; height: 20px; border: 2px solid rgba(201,169,110,0.2);
+            border-top-color: var(--gold); border-radius: 50%;
+            animation: stockSpin 0.6s linear infinite;
+        }
+        @keyframes stockSpin { to { transform: rotate(360deg); } }
+        .stock-empty {
+            text-align: center; color: var(--grey); font-size: 0.72rem;
+            padding: 20px 0; letter-spacing: 0.3px;
+        }
+
+        .slider-control { margin-bottom: 10px; }
+
+        .slider-control label {
+            display: flex; justify-content: space-between;
+            font-size: 0.72rem; color: var(--grey);
+            margin-bottom: 6px; letter-spacing: 0.5px;
+        }
+
+        .slider-control input[type="range"] {
+            width: 100%; -webkit-appearance: none;
+            height: 2px; background: var(--dark-3); outline: none;
+        }
+
+        .slider-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px;
+            background: var(--gold); border-radius: 50%; cursor: pointer;
+        }
+
+        .slider-control input[type="range"]::-moz-range-thumb {
+            width: 14px; height: 14px; background: var(--gold);
+            border-radius: 50%; cursor: pointer; border: none;
+        }
+
+        .tool-btn {
+            width: 100%; padding: 10px; background: transparent;
+            border: 1px solid rgba(201,169,110,0.25);
+            color: var(--gold); font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 0.75rem; letter-spacing: 3px;
+            text-transform: uppercase; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 500;
+        }
+
+        .tool-btn:hover { background: rgba(201,169,110,0.1); border-color: var(--gold); }
+
+        .tool-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        /* Text input */
+        .text-input {
+            width: 100%; padding: 10px 12px;
+            background: var(--dark-3); border: 1px solid rgba(201,169,110,0.2);
+            color: var(--white); font-family: 'Inter', sans-serif;
+            font-size: 0.85rem; outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .text-input:focus { border-color: var(--gold); }
+
+        .text-input::placeholder { color: #555; }
+
+        /* Font select */
+        .font-select {
+            width: 100%; padding: 10px 12px;
+            background: var(--dark-3); border: 1px solid rgba(201,169,110,0.2);
+            color: var(--white); font-size: 0.85rem;
+            outline: none; cursor: pointer;
+            -webkit-appearance: none;
+            transition: border-color 0.3s;
+        }
+
+        .font-select:focus { border-color: var(--gold); }
+
+        .font-select option { background: var(--dark-3); color: var(--white); }
+
+        .text-color-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .text-color-swatch {
+            width: 28px; height: 28px;
+            border: 2px solid rgba(255,255,255,0.15);
+            cursor: pointer; transition: all 0.2s ease;
+        }
+
+        .text-color-swatch:hover { transform: scale(1.1); }
+        .text-color-swatch.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+
+        /* Canvas Area — WHITE */
+        .canvas-area {
+            background: var(--white);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 700px; height: 800px;
+        }
+
+        .tshirt-img {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 88%; max-height: 88%;
+            object-fit: contain;
+            pointer-events: none; user-select: none;
+        }
+
+        #designCanvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            cursor: grab;
+        }
+
+        #designCanvas:active { cursor: grabbing; }
+
+        /* CTA */
+        .cta-section {
+            padding: 120px 0; text-align: center;
+            background: radial-gradient(ellipse at 50% 50%, rgba(201,169,110,0.06) 0%, transparent 60%);
+            border-top: 1px solid rgba(201,169,110,0.15);
+        }
+
+        .cta-section h2 { font-size: 3.5rem; letter-spacing: 10px; margin-bottom: 15px; }
+        .cta-section h2 span { color: var(--gold); }
+
+        .cta-section p {
+            color: var(--grey); font-size: 1rem;
+            margin-bottom: 45px; max-width: 480px;
+            margin-left: auto; margin-right: auto; letter-spacing: 0.5px;
+        }
+
+        .cta-section .btn-gold-solid { opacity: 1; animation: none; }
+
+        .pricing { display: flex; justify-content: center; gap: 60px; margin-bottom: 45px; }
+        .price-item { text-align: center; }
+
+        .price-item .amount {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 2.8rem; color: var(--gold); font-weight: 700;
+        }
+
+        .price-item .label {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 0.75rem; color: var(--grey);
+            letter-spacing: 3px; text-transform: uppercase;
+            margin-top: 5px; font-weight: 400;
+        }
+
+        /* Footer */
+        footer { padding: 50px 0 35px; border-top: 1px solid rgba(201,169,110,0.12); }
+        .footer-content { display: flex; justify-content: space-between; align-items: center; }
+
+        .footer-logo {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 1.1rem; font-weight: 700;
+            letter-spacing: 8px; color: var(--gold);
+        }
+
+        .footer-links { display: flex; gap: 30px; }
+
+        .footer-links a {
+            color: var(--grey); text-decoration: none;
+            font-size: 0.75rem; letter-spacing: 1px; transition: color 0.3s;
+        }
+
+        .footer-links a:hover { color: var(--gold); }
+        .footer-copy { color: #555; font-size: 0.7rem; letter-spacing: 1px; }
+
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* Comparison Slider */
+        .compare-section {
+            padding: 100px 0 120px;
+            background: var(--black);
+            border-top: 1px solid rgba(201,169,110,0.15);
+        }
+
+        .compare-header { text-align: center; margin-bottom: 50px; }
+        .compare-header h2 { font-size: 3.5rem; letter-spacing: 10px; margin-bottom: 10px; color: var(--white); }
+        .compare-header h2 span { color: var(--gold); }
+        .compare-header p {
+            font-family: 'Futura', 'Oswald', sans-serif;
+            color: var(--grey); letter-spacing: 4px;
+            text-transform: uppercase; font-size: 0.9rem; font-weight: 400;
+        }
+
+        .compare-container {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            cursor: ew-resize;
+            border: 1px solid rgba(201,169,110,0.2);
+        }
+
+        .compare-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        .compare-layer canvas {
+            width: 100%; height: 100%;
+            display: block;
+        }
+
+        .compare-luxe { clip-path: inset(0 0 0 50%); }
+
+        .compare-slider-line {
+            position: absolute;
+            top: 0; bottom: 0;
+            left: 50%;
+            width: 3px;
+            background: var(--gold);
+            transform: translateX(-50%);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .compare-slider-handle {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px; height: 48px;
+            background: var(--gold);
+            border-radius: 50%;
+            z-index: 11;
+            cursor: ew-resize;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(201,169,110,0.4);
+            transition: box-shadow 0.3s;
+        }
+
+        .compare-slider-handle:hover {
+            box-shadow: 0 0 30px rgba(201,169,110,0.6);
+        }
+
+        .compare-slider-handle svg { width: 22px; height: 22px; fill: var(--black); }
+
+        .compare-label {
+            position: absolute;
+            top: 20px;
+            font-family: 'Futura', 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 8px 18px;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .compare-label-dtf {
+            left: 20px;
+            color: #888;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .compare-label-luxe {
+            right: 20px;
+            color: var(--gold);
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(201,169,110,0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .designer-layout { grid-template-columns: 1fr; }
+            .tools-sidebar { max-height: none; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .canvas-wrapper { width: 100%; height: 600px; }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 0 20px; }
+            .nav-links { display: none; }
+            .tools-sidebar { grid-template-columns: 1fr; }
+            .pricing { flex-direction: column; gap: 25px; }
+            .footer-content { flex-direction: column; gap: 20px; text-align: center; }
+            .footer-links { flex-wrap: wrap; justify-content: center; }
+            .hero h1 { letter-spacing: 8px; }
+            .canvas-wrapper { height: 450px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="container">
+            <a href="#" class="logo">LUXE</a>
+            <div class="nav-links">
+                <a href="#compare">Quality</a>
+                <a href="#designer">Configurator</a>
+                <a href="#order">Partner With Us</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero" id="hero">
+        <canvas id="particles"></canvas>
+        <div class="hero-content">
+            <p class="hero-tag">Premium Digital Print</p>
+            <h1><span>LUXE</span></h1>
+            <p class="hero-sub">Elevate Your Product Line</p>
+            <a href="#designer" class="btn-gold">Request Samples</a>
+        </div>
+    </section>
+
+    <!-- Comparison Slider -->
+    <section class="compare-section" id="compare">
+        <div class="container">
+            <div class="compare-header reveal">
+                <div class="gold-divider"></div>
+                <h2>Print Quality <span>That Sells</span></h2>
+                <p>Standard DTF vs LUXE Premium Print</p>
+            </div>
+            <div class="compare-container" id="compareContainer">
+                <div class="compare-layer compare-dtf">
+                    <canvas id="dtfCanvas"></canvas>
+                </div>
+                <div class="compare-layer compare-luxe" id="luxeLayer">
+                    <canvas id="luxeCanvas"></canvas>
+                </div>
+                <div class="compare-slider-line" id="compareLine"></div>
+                <div class="compare-slider-handle" id="compareHandle">
+                    <svg viewBox="0 0 24 24"><path d="M8 5l-5 7 5 7M16 5l5 7-5 7"/></svg>
+                </div>
+                <div class="compare-label compare-label-dtf">DTF</div>
+                <div class="compare-label compare-label-luxe">LUXE</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Designer -->
+    <section class="designer-section" id="designer">
+        <div class="container">
+            <div class="designer-header reveal">
+                <div class="gold-divider"></div>
+                <h2>The Configurator</h2>
+                <p>Preview your print on premium blanks</p>
+            </div>
+
+            <div class="designer-layout">
+                <div class="tools-sidebar">
+                    <!-- Upload -->
+                    <div class="tool-group">
+                        <h4>Upload Image</h4>
+                        <div class="upload-area" id="uploadArea">
+                            <span class="upload-icon">&#8593;</span>
+                            <p>Drop image or click to upload</p>
+                            <input type="file" id="fileInput" accept="image/*">
+                        </div>
+                    </div>
+
+                    <!-- Add Text -->
+                    <div class="tool-group">
+                        <h4>Add Text</h4>
+                        <input type="text" class="text-input" id="textInput" placeholder="Enter your text..." oninput="updateText()">
+                        <div style="margin-top:10px">
+                            <select class="font-select" id="fontSelect" onchange="updateText()">
+                                <option value="Futura">Futura</option>
+                                <option value="Oswald">Oswald</option>
+                                <option value="Bebas Neue">Bebas Neue</option>
+                                <option value="Anton">Anton</option>
+                                <option value="Archivo Black">Archivo Black</option>
+                                <option value="Montserrat">Montserrat</option>
+                                <option value="Raleway">Raleway</option>
+                                <option value="Roboto Condensed">Roboto Condensed</option>
+                                <option value="Playfair Display">Playfair Display</option>
+                                <option value="Permanent Marker">Permanent Marker</option>
+                                <option value="Lobster">Lobster</option>
+                                <option value="Pacifico">Pacifico</option>
+                                <option value="Dancing Script">Dancing Script</option>
+                                <option value="Sacramento">Sacramento</option>
+                                <option value="Great Vibes">Great Vibes</option>
+                            </select>
+                        </div>
+                        <div style="margin-top:10px">
+                            <div class="slider-control">
+                                <label><span>Font Size</span><span id="fontSizeVal">48px</span></label>
+                                <input type="range" id="fontSizeSlider" min="12" max="120" value="48" oninput="updateText()">
+                            </div>
+                            <div class="slider-control">
+                                <label><span>Letter Spacing</span><span id="kerningVal">0px</span></label>
+                                <input type="range" id="kerningSlider" min="-10" max="40" value="0" oninput="updateText()">
+                            </div>
+                            <div class="slider-control">
+                                <label><span>Curve</span><span id="curveVal">0°</span></label>
+                                <input type="range" id="curveSlider" min="-180" max="180" value="0" oninput="updateText()">
+                            </div>
+                        </div>
+                        <div style="margin-top:8px">
+                            <label style="font-size:0.72rem;color:var(--grey);letter-spacing:0.5px;display:block;margin-bottom:6px">Text Color</label>
+                            <div class="text-color-row">
+                                <div class="text-color-swatch active" style="background:#000000" data-color="#000000" onclick="setTextColor(this)"></div>
+                                <div class="text-color-swatch" style="background:#ffffff;border-color:#ccc" data-color="#ffffff" onclick="setTextColor(this)"></div>
+                                <div class="text-color-swatch" style="background:#C9A96E" data-color="#C9A96E" onclick="setTextColor(this)"></div>
+                                <div class="text-color-swatch" style="background:#c0392b" data-color="#c0392b" onclick="setTextColor(this)"></div>
+                                <div class="text-color-swatch" style="background:#1a2744" data-color="#1a2744" onclick="setTextColor(this)"></div>
+                                <div class="text-color-swatch" style="background:#1a3a2a" data-color="#1a3a2a" onclick="setTextColor(this)"></div>
+                                <div class="text-color-swatch" style="background:#5a1a2a" data-color="#5a1a2a" onclick="setTextColor(this)"></div>
+                                <div class="text-color-swatch" style="background:#6a7db8" data-color="#6a7db8" onclick="setTextColor(this)"></div>
+                            </div>
+                        </div>
+                        <button class="tool-btn" style="margin-top:10px" onclick="addTextToCanvas()">Place Text</button>
+                    </div>
+
+                    <!-- Shirt Color -->
+                    <div class="tool-group">
+                        <h4>Shirt Color</h4>
+                        <div class="color-swatches">
+                            <div class="swatch active" data-img="tees/5001_STAPLE_TEE_BLACK.jpg" style="background:#1a1a1a" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_WHITE.jpg" style="background:#f0f0f0" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_NAVY.jpg" style="background:#1a2744" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_CHARCOAL.jpg" style="background:#3a3a3a" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_ORCHID.jpg" style="background:#d4b8c4" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_LAPIS.jpg" style="background:#6a7db8" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_RED.jpg" style="background:#c0392b" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_BURGUNDY.jpg" style="background:#5a1a2a" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_FOREST_GREEN.jpg" style="background:#1a3a2a" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_COBALT.jpg" style="background:#2d4a8a" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_SAND.jpg" style="background:#c4a67a" onclick="setShirt(this)"></div>
+                            <div class="swatch" data-img="tees/5001_STAPLE_TEE_BONE.jpg" style="background:#d8cfc0" onclick="setShirt(this)"></div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Art -->
+                    <div class="tool-group">
+                        <h4>Stock Art</h4>
+                        <div class="stock-search">
+                            <input type="text" id="stockSearchInput" placeholder="Search free images..." onkeydown="if(event.key==='Enter')searchStock()">
+                            <button onclick="searchStock()">Go</button>
+                        </div>
+                        <div class="stock-categories">
+                            <span class="stock-cat-pill" onclick="searchStockCategory(this,'animals')">Animals</span>
+                            <span class="stock-cat-pill" onclick="searchStockCategory(this,'nature')">Nature</span>
+                            <span class="stock-cat-pill" onclick="searchStockCategory(this,'abstract')">Abstract</span>
+                            <span class="stock-cat-pill" onclick="searchStockCategory(this,'vintage')">Vintage</span>
+                            <span class="stock-cat-pill" onclick="searchStockCategory(this,'skull')">Skulls</span>
+                            <span class="stock-cat-pill" onclick="searchStockCategory(this,'fire flames')">Flames</span>
+                            <span class="stock-cat-pill" onclick="searchStockCategory(this,'typography')">Type</span>
+                            <span class="stock-cat-pill" onclick="searchStockCategory(this,'pattern')">Patterns</span>
+                        </div>
+                        <div id="stockResults" class="stock-grid"></div>
+                        <button id="stockLoadMore" class="stock-load-more" onclick="loadMoreStock()" style="display:none">Load More</button>
+                        <div class="stock-attr">Images by <a href="https://pixabay.com/" target="_blank">Pixabay</a></div>
+                    </div>
+
+                    <!-- Transform -->
+                    <div class="tool-group">
+                        <h4>Transform</h4>
+                        <div class="slider-control">
+                            <label><span>Size</span><span id="sizeVal">100%</span></label>
+                            <input type="range" id="sizeSlider" min="20" max="250" value="100" oninput="resizeDesign(this.value)">
+                        </div>
+                        <div class="slider-control">
+                            <label><span>Rotation</span><span id="rotVal">0°</span></label>
+                            <input type="range" id="rotSlider" min="0" max="360" value="0" oninput="rotateDesign(this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Background Removal -->
+                    <div class="tool-group">
+                        <h4>Background</h4>
+                        <div class="slider-control">
+                            <label><span>Threshold</span><span id="threshVal">230</span></label>
+                            <input type="range" id="threshSlider" min="100" max="255" value="230" oninput="document.getElementById('threshVal').textContent=this.value">
+                        </div>
+                        <button class="tool-btn" onclick="removeBackground()">Remove Background</button>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="tool-group">
+                        <h4>Actions</h4>
+                        <div class="tool-btn-row">
+                            <button class="tool-btn" onclick="deleteSelected()">Delete Layer</button>
+                            <button class="tool-btn" onclick="clearDesign()">Clear All</button>
+                        </div>
+                        <button class="tool-btn" style="margin-top:8px" onclick="exportDesign()">Export</button>
+                    </div>
+                </div>
+
+                <!-- Canvas -->
+                <div class="canvas-area">
+                    <div class="canvas-wrapper" id="canvasWrapper">
+                        <img class="tshirt-img" id="tshirtImg" src="tees/5001_STAPLE_TEE_BLACK.jpg" alt="T-Shirt">
+                        <canvas id="designCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section" id="order">
+        <div class="container reveal">
+            <div class="gold-divider"></div>
+            <h2>Your Print <span>Partner</span></h2>
+            <p>1200 DPI precision. Premium blanks. Prints that last. From samples to scale.</p>
+            <div class="pricing">
+                <div class="price-item"><div class="amount">12+</div><div class="label">Minimum Order</div></div>
+                <div class="price-item"><div class="amount">48hr</div><div class="label">Turnaround</div></div>
+                <div class="price-item"><div class="amount">500+</div><div class="label">Brands Served</div></div>
+            </div>
+            <button class="btn-gold-solid" onclick="document.getElementById('designer').scrollIntoView({behavior:'smooth'})">Get a Quote</button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">LUXE</div>
+                <div class="footer-links">
+                    <a href="#">Services</a><a href="#">Pricing</a><a href="#">FAQ</a><a href="#">Contact</a>
+                </div>
+                <div class="footer-copy">&copy; 2026 LUXE. All rights reserved.</div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ==============================
+        // Particles
+        // ==============================
+        const pCanvas = document.getElementById('particles');
+        const pCtx = pCanvas.getContext('2d');
+        let particles = [];
+
+        function resizeP() { pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight; }
+        resizeP();
+        window.addEventListener('resize', resizeP);
+
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * pCanvas.width;
+                this.y = Math.random() * pCanvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedY = -(Math.random() * 0.3 + 0.1);
+                this.speedX = (Math.random() - 0.5) * 0.2;
+                this.opacity = Math.random() * 0.4 + 0.1;
+                this.fade = Math.random() * 0.005 + 0.002;
+            }
+            update() {
+                this.y += this.speedY; this.x += this.speedX;
+                this.opacity -= this.fade;
+                if (this.opacity <= 0 || this.y < 0) this.reset();
+            }
+            draw() {
+                pCtx.beginPath();
+                pCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                pCtx.fillStyle = `rgba(201,169,110,${this.opacity})`;
+                pCtx.fill();
+            }
+        }
+
+        for (let i = 0; i < 50; i++) particles.push(new Particle());
+        function animP() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animP);
+        }
+        animP();
+
+        // Navbar scroll
+        window.addEventListener('scroll', () => {
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // Scroll reveal
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // ==============================
+        // Designer Engine — Multi-Layer
+        // ==============================
+        const canvas = document.getElementById('designCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvasWrapper');
+        const tshirtImg = document.getElementById('tshirtImg');
+
+        // Layer system: each layer = { img, original, x, y, w, h, rotation, baseScale }
+        let layers = [];
+        let selectedIdx = -1; // currently selected layer index
+
+        let isDragging = false;
+        let isResizing = false;
+        let resizeCorner = null;
+        let dragOX = 0, dragOY = 0;
+        let resizeStartX = 0, resizeStartY = 0;
+        let resizeStartW = 0, resizeStartH = 0;
+        let resizeStartImgX = 0, resizeStartImgY = 0;
+        const HANDLE_SIZE = 10;
+        const HANDLE_HIT = 16;
+        let showBounds = false;
+
+        // Text state
+        let textColor = '#000000';
+
+        function sel() { return selectedIdx >= 0 ? layers[selectedIdx] : null; }
+
+        function sizeCanvas() {
+            const rect = wrapper.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            render();
+        }
+
+        window.addEventListener('resize', sizeCanvas);
+        tshirtImg.addEventListener('load', sizeCanvas);
+        sizeCanvas();
+
+        function getPrintZone() {
+            const cw = canvas.width, ch = canvas.height;
+            return { x: cw * 0.30, y: ch * 0.22, w: cw * 0.40, h: ch * 0.40 };
+        }
+
+        function addLayer(img, baseScale) {
+            const zone = getPrintZone();
+            const bs = baseScale || Math.min(zone.w / img.width, zone.h / img.height, 1);
+            const w = img.width * bs;
+            const h = img.height * bs;
+            const layer = {
+                img, original: img,
+                x: zone.x + (zone.w - w) / 2,
+                y: zone.y + (zone.h - h) / 2,
+                w, h, rotation: 0, baseScale: bs
+            };
+            layers.push(layer);
+            selectedIdx = layers.length - 1;
+            syncSliders();
+            render();
+        }
+
+        function syncSliders() {
+            const l = sel();
+            if (l) {
+                const pct = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
+                document.getElementById('sizeSlider').value = Math.min(250, Math.max(20, pct));
+                document.getElementById('sizeVal').textContent = pct + '%';
+                document.getElementById('rotSlider').value = l.rotation;
+                document.getElementById('rotVal').textContent = l.rotation + '°';
+            } else {
+                document.getElementById('sizeSlider').value = 100;
+                document.getElementById('sizeVal').textContent = '100%';
+                document.getElementById('rotSlider').value = 0;
+                document.getElementById('rotVal').textContent = '0°';
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            layers.forEach((layer, idx) => {
+                ctx.save();
+                const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
+                ctx.translate(cx, cy);
+                ctx.rotate((layer.rotation * Math.PI) / 180);
+                ctx.drawImage(layer.img, -layer.w / 2, -layer.h / 2, layer.w, layer.h);
+
+                // Bounds for selected layer on hover
+                if (showBounds && idx === selectedIdx) {
+                    ctx.strokeStyle = 'rgba(201,169,110,0.6)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([6, 4]);
+                    ctx.strokeRect(-layer.w / 2 - 2, -layer.h / 2 - 2, layer.w + 4, layer.h + 4);
+                    ctx.setLineDash([]);
+
+                    const hs = HANDLE_SIZE;
+                    ctx.fillStyle = '#C9A96E';
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1.5;
+                    [[-layer.w/2, -layer.h/2],[layer.w/2, -layer.h/2],
+                     [-layer.w/2, layer.h/2],[layer.w/2, layer.h/2]].forEach(([cx2, cy2]) => {
+                        ctx.fillRect(cx2 - hs/2, cy2 - hs/2, hs, hs);
+                        ctx.strokeRect(cx2 - hs/2, cy2 - hs/2, hs, hs);
+                    });
+                } else if (showBounds && idx !== selectedIdx) {
+                    // Subtle outline for non-selected layers
+                    ctx.strokeStyle = 'rgba(201,169,110,0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 6]);
+                    ctx.strokeRect(-layer.w / 2 - 2, -layer.h / 2 - 2, layer.w + 4, layer.h + 4);
+                    ctx.setLineDash([]);
+                }
+
+                ctx.restore();
+            });
+        }
+
+        // Shirt swap
+        function setShirt(el) {
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            el.classList.add('active');
+            tshirtImg.src = el.dataset.img;
+        }
+
+        // Upload
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#C9A96E'; });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = 'rgba(201,169,110,0.25)'; });
+        uploadArea.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'rgba(201,169,110,0.25)';
+            if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', e => { if (e.target.files[0]) loadImage(e.target.files[0]); });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() { addLayer(img); };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Stock Art (Pixabay)
+        const PIXABAY_KEY = '54458838-3fd98cc3ef3d03cbceb5912a7';
+        let stockQuery = '';
+        let stockPage = 1;
+        let stockTotal = 0;
+        let stockDebounce = null;
+
+        function searchStock() {
+            const q = document.getElementById('stockSearchInput').value.trim();
+            if (!q) return;
+            stockQuery = q;
+            stockPage = 1;
+            document.querySelectorAll('.stock-cat-pill').forEach(p => p.classList.remove('active'));
+            fetchStock();
+        }
+
+        function searchStockCategory(el, query) {
+            document.querySelectorAll('.stock-cat-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('stockSearchInput').value = '';
+            stockQuery = query;
+            stockPage = 1;
+            fetchStock();
+        }
+
+        function loadMoreStock() {
+            stockPage++;
+            fetchStock(true);
+        }
+
+        function fetchStock(append) {
+            const grid = document.getElementById('stockResults');
+            const btn = document.getElementById('stockLoadMore');
+            if (!append) {
+                grid.innerHTML = '<div class="stock-spinner"></div>';
+                btn.style.display = 'none';
+            }
+            const url = `https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${encodeURIComponent(stockQuery)}&image_type=illustration&per_page=12&page=${stockPage}&safesearch=true`;
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    stockTotal = data.totalHits || 0;
+                    if (!append) grid.innerHTML = '';
+                    if (data.hits && data.hits.length) {
+                        data.hits.forEach(hit => {
+                            const thumb = document.createElement('div');
+                            thumb.className = 'stock-thumb';
+                            thumb.innerHTML = `<img src="${hit.webformatURL}" alt="${hit.tags}" loading="lazy">`;
+                            thumb.onclick = () => addStockImage(hit.largeImageURL);
+                            grid.appendChild(thumb);
+                        });
+                        btn.style.display = (stockPage * 12 < stockTotal) ? 'block' : 'none';
+                    } else if (!append) {
+                        grid.innerHTML = '<div class="stock-empty">No results found</div>';
+                    }
+                })
+                .catch(() => {
+                    if (!append) grid.innerHTML = '<div class="stock-empty">Search failed — try again</div>';
+                });
+        }
+
+        function addStockImage(url) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() { addLayer(img); };
+            img.onerror = function() { alert('Could not load image'); };
+            img.src = url;
+        }
+
+        // ==============================
+        // Add Text with Curve
+        // ==============================
+        function updateText() {
+            document.getElementById('fontSizeVal').textContent = document.getElementById('fontSizeSlider').value + 'px';
+            document.getElementById('kerningVal').textContent = document.getElementById('kerningSlider').value + 'px';
+            document.getElementById('curveVal').textContent = document.getElementById('curveSlider').value + '°';
+        }
+
+        function setTextColor(el) {
+            document.querySelectorAll('.text-color-swatch').forEach(s => s.classList.remove('active'));
+            el.classList.add('active');
+            textColor = el.dataset.color;
+        }
+
+        function addTextToCanvas() {
+            const text = document.getElementById('textInput').value;
+            if (!text) return;
+
+            const fontFamily = document.getElementById('fontSelect').value;
+            const fontSize = parseInt(document.getElementById('fontSizeSlider').value);
+            const kerning = parseInt(document.getElementById('kerningSlider').value);
+            const curveDeg = parseInt(document.getElementById('curveSlider').value);
+
+            const padding = 40;
+            const off = document.createElement('canvas');
+            const oCtx = off.getContext('2d');
+
+            oCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+            let totalW = 0;
+            for (let i = 0; i < text.length; i++) {
+                totalW += oCtx.measureText(text[i]).width + (i < text.length - 1 ? kerning : 0);
+            }
+
+            if (curveDeg === 0) {
+                off.width = totalW + padding * 2;
+                off.height = fontSize * 1.5 + padding * 2;
+                oCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+                oCtx.fillStyle = textColor;
+                oCtx.textBaseline = 'middle';
+                let xPos = padding;
+                const yPos = off.height / 2;
+                for (let i = 0; i < text.length; i++) {
+                    oCtx.fillText(text[i], xPos, yPos);
+                    xPos += oCtx.measureText(text[i]).width + kerning;
+                }
+            } else {
+                const arcAngle = (Math.abs(curveDeg) * Math.PI) / 180;
+                const radius = totalW / arcAngle;
+                const dim = (radius + fontSize) * 2 + padding * 2;
+                off.width = dim; off.height = dim;
+                oCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+                oCtx.fillStyle = textColor;
+                oCtx.textBaseline = 'middle';
+                oCtx.textAlign = 'center';
+                const centerX = dim / 2;
+                const centerY = curveDeg > 0 ? dim / 2 + radius : dim / 2 - radius;
+                const startAngle = curveDeg > 0 ? -Math.PI / 2 - arcAngle / 2 : Math.PI / 2 + arcAngle / 2;
+                let currentAngle = startAngle;
+                for (let i = 0; i < text.length; i++) {
+                    const charW = oCtx.measureText(text[i]).width + (i < text.length - 1 ? kerning : 0);
+                    const halfCharAngle = (charW / 2) / radius;
+                    currentAngle += curveDeg > 0 ? halfCharAngle : -halfCharAngle;
+                    oCtx.save();
+                    oCtx.translate(centerX, centerY);
+                    oCtx.rotate(currentAngle);
+                    oCtx.fillText(text[i], 0, curveDeg > 0 ? -radius : radius);
+                    oCtx.restore();
+                    currentAngle += curveDeg > 0 ? halfCharAngle : -halfCharAngle;
+                }
+            }
+
+            const trimmed = trimCanvas(off);
+            const img = new Image();
+            img.onload = function() { addLayer(img); };
+            img.src = trimmed.toDataURL();
+        }
+
+        // Trim transparent space from canvas
+        function trimCanvas(c) {
+            const ctx2 = c.getContext('2d');
+            const pixels = ctx2.getImageData(0, 0, c.width, c.height);
+            const d = pixels.data;
+            let top = c.height, left = c.width, right = 0, bottom = 0;
+            for (let y = 0; y < c.height; y++) {
+                for (let x = 0; x < c.width; x++) {
+                    const idx = (y * c.width + x) * 4;
+                    if (d[idx + 3] > 0) {
+                        if (y < top) top = y;
+                        if (y > bottom) bottom = y;
+                        if (x < left) left = x;
+                        if (x > right) right = x;
+                    }
+                }
+            }
+            if (right <= left || bottom <= top) return c;
+            const pad = 10;
+            const trimW = right - left + 1 + pad * 2;
+            const trimH = bottom - top + 1 + pad * 2;
+            const trimmed = document.createElement('canvas');
+            trimmed.width = trimW; trimmed.height = trimH;
+            trimmed.getContext('2d').drawImage(c, left - pad, top - pad, trimW, trimH, 0, 0, trimW, trimH);
+            return trimmed;
+        }
+
+        // Transform — applies to selected layer
+        function resizeDesign(val) {
+            const l = sel(); if (!l) return;
+            const scale = val / 100;
+            const ocx = l.x + l.w / 2, ocy = l.y + l.h / 2;
+            l.w = l.original.width * l.baseScale * scale;
+            l.h = l.original.height * l.baseScale * scale;
+            l.x = ocx - l.w / 2;
+            l.y = ocy - l.h / 2;
+            document.getElementById('sizeVal').textContent = val + '%';
+            render();
+        }
+
+        function rotateDesign(val) {
+            const l = sel(); if (!l) return;
+            l.rotation = parseInt(val);
+            document.getElementById('rotVal').textContent = val + '°';
+            render();
+        }
+
+        // Background removal — applies to selected layer
+        function removeBackground() {
+            const l = sel(); if (!l) return;
+            const off = document.createElement('canvas');
+            off.width = l.img.naturalWidth || l.img.width;
+            off.height = l.img.naturalHeight || l.img.height;
+            const oCtx = off.getContext('2d');
+            oCtx.drawImage(l.img, 0, 0);
+            let imageData;
+            try {
+                imageData = oCtx.getImageData(0, 0, off.width, off.height);
+            } catch (e) {
+                // CORS tainted canvas — re-fetch through a data URL proxy
+                const proxy = document.createElement('canvas');
+                proxy.width = off.width; proxy.height = off.height;
+                const pCtx = proxy.getContext('2d');
+                pCtx.drawImage(l.img, 0, 0);
+                // If still tainted, we truly can't access pixels
+                try {
+                    imageData = pCtx.getImageData(0, 0, proxy.width, proxy.height);
+                } catch (e2) {
+                    alert('Cannot remove background on this image due to cross-origin restrictions.');
+                    return;
+                }
+            }
+            const d = imageData.data;
+            const thresh = parseInt(document.getElementById('threshSlider').value);
+            const tolerance = Math.round((255 - thresh) * 1.5);
+
+            // Sample background color from the four corners
+            const w = off.width, h = off.height;
+            const corners = [
+                [0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]
+            ];
+            let sr = 0, sg = 0, sb = 0, count = 0;
+            corners.forEach(([cx, cy]) => {
+                const idx = (cy * w + cx) * 4;
+                if (d[idx + 3] > 0) { sr += d[idx]; sg += d[idx+1]; sb += d[idx+2]; count++; }
+            });
+            if (count === 0) { render(); return; }
+            const bgR = Math.round(sr / count);
+            const bgG = Math.round(sg / count);
+            const bgB = Math.round(sb / count);
+
+            for (let i = 0; i < d.length; i += 4) {
+                if (d[i+3] === 0) continue;
+                const dr = d[i] - bgR, dg = d[i+1] - bgG, db = d[i+2] - bgB;
+                const dist = Math.sqrt(dr*dr + dg*dg + db*db);
+                if (dist < tolerance) {
+                    d[i+3] = dist < tolerance * 0.5 ? 0 : Math.round((dist / tolerance) * 255);
+                }
+            }
+            oCtx.putImageData(imageData, 0, 0);
+            const img = new Image();
+            img.onload = function() { l.img = img; render(); };
+            img.src = off.toDataURL();
+        }
+
+        // Hit testing helpers
+        function getCornerPositions(layer) {
+            const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
+            const rad = (layer.rotation * Math.PI) / 180;
+            const cos = Math.cos(rad), sin = Math.sin(rad);
+            const hw = layer.w / 2, hh = layer.h / 2;
+            return [
+                { key: 'tl', x: cx + (-hw)*cos - (-hh)*sin, y: cy + (-hw)*sin + (-hh)*cos },
+                { key: 'tr', x: cx + ( hw)*cos - (-hh)*sin, y: cy + ( hw)*sin + (-hh)*cos },
+                { key: 'bl', x: cx + (-hw)*cos - ( hh)*sin, y: cy + (-hw)*sin + ( hh)*cos },
+                { key: 'br', x: cx + ( hw)*cos - ( hh)*sin, y: cy + ( hw)*sin + ( hh)*cos },
+            ];
+        }
+
+        function hitTestCorner(mx, my) {
+            const l = sel(); if (!l) return null;
+            const corners = getCornerPositions(l);
+            for (const c of corners) {
+                if (Math.abs(mx - c.x) <= HANDLE_HIT && Math.abs(my - c.y) <= HANDLE_HIT) return c.key;
+            }
+            return null;
+        }
+
+        function hitTestLayer(mx, my, layer) {
+            return mx >= layer.x && mx <= layer.x + layer.w && my >= layer.y && my <= layer.y + layer.h;
+        }
+
+        // Find topmost layer at point (iterate in reverse for z-order)
+        function findLayerAt(mx, my) {
+            for (let i = layers.length - 1; i >= 0; i--) {
+                if (hitTestLayer(mx, my, layers[i])) return i;
+            }
+            return -1;
+        }
+
+        function getResizeCursor(corner) {
+            if (corner === 'tl' || corner === 'br') return 'nwse-resize';
+            if (corner === 'tr' || corner === 'bl') return 'nesw-resize';
+            return 'default';
+        }
+
+        function getCanvasCoords(e, rect) {
+            const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+            const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+            const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+            return { mx: (clientX - rect.left) * sx, my: (clientY - rect.top) * sy };
+        }
+
+        // Show bounding box on hover
+        canvas.addEventListener('mouseenter', () => {
+            if (layers.length) { showBounds = true; render(); }
+        });
+        canvas.addEventListener('mouseleave', () => {
+            if (!isDragging && !isResizing) { showBounds = false; render(); }
+        });
+
+        // Mouse events
+        canvas.addEventListener('mousedown', e => {
+            if (!layers.length) return;
+            const rect = canvas.getBoundingClientRect();
+            const { mx, my } = getCanvasCoords(e, rect);
+
+            // Check corners of selected layer first
+            if (selectedIdx >= 0) {
+                const corner = hitTestCorner(mx, my);
+                if (corner) {
+                    const l = sel();
+                    isResizing = true;
+                    resizeCorner = corner;
+                    resizeStartX = mx; resizeStartY = my;
+                    resizeStartW = l.w; resizeStartH = l.h;
+                    resizeStartImgX = l.x; resizeStartImgY = l.y;
+                    return;
+                }
+            }
+
+            // Check if clicking on any layer (topmost first)
+            const hit = findLayerAt(mx, my);
+            if (hit >= 0) {
+                selectedIdx = hit;
+                syncSliders();
+                isDragging = true;
+                dragOX = mx - layers[hit].x;
+                dragOY = my - layers[hit].y;
+                render();
+                return;
+            }
+
+            // Clicked empty space — deselect
+            selectedIdx = -1;
+            syncSliders();
+            render();
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            const rect = canvas.getBoundingClientRect();
+            const { mx, my } = getCanvasCoords(e, rect);
+
+            if (!isDragging && !isResizing) {
+                const corner = hitTestCorner(mx, my);
+                if (corner) {
+                    canvas.style.cursor = getResizeCursor(corner);
+                } else if (findLayerAt(mx, my) >= 0) {
+                    canvas.style.cursor = 'grab';
+                } else {
+                    canvas.style.cursor = 'default';
+                }
+            }
+
+            if (isResizing && selectedIdx >= 0) {
+                const l = sel();
+                const dx = mx - resizeStartX, dy = my - resizeStartY;
+                const aspect = resizeStartW / resizeStartH;
+                const rawDelta = (resizeCorner === 'br') ? (dx + dy) / 2
+                    : (resizeCorner === 'tl') ? -(dx + dy) / 2
+                    : (resizeCorner === 'tr') ? (dx - dy) / 2
+                    : (-dx + dy) / 2;
+
+                let newW = resizeStartW + rawDelta;
+                let newH = newW / aspect;
+                if (newW < 20) { newW = 20; newH = newW / aspect; }
+
+                if (resizeCorner === 'br') { l.x = resizeStartImgX; l.y = resizeStartImgY; }
+                else if (resizeCorner === 'tl') { l.x = resizeStartImgX + resizeStartW - newW; l.y = resizeStartImgY + resizeStartH - newH; }
+                else if (resizeCorner === 'tr') { l.x = resizeStartImgX; l.y = resizeStartImgY + resizeStartH - newH; }
+                else { l.x = resizeStartImgX + resizeStartW - newW; l.y = resizeStartImgY; }
+
+                l.w = newW; l.h = newH;
+
+                const pct = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
+                document.getElementById('sizeSlider').value = Math.min(250, Math.max(20, pct));
+                document.getElementById('sizeVal').textContent = pct + '%';
+
+                render();
+                return;
+            }
+
+            if (isDragging && selectedIdx >= 0) {
+                canvas.style.cursor = 'grabbing';
+                const l = sel();
+                l.x = mx - dragOX;
+                l.y = my - dragOY;
+                render();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => { isDragging = false; isResizing = false; resizeCorner = null; });
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false; isResizing = false; resizeCorner = null;
+            showBounds = false; render();
+        });
+
+        // Touch events
+        canvas.addEventListener('touchstart', e => {
+            if (!layers.length) return; e.preventDefault();
+            showBounds = true;
+            const rect = canvas.getBoundingClientRect();
+            const { mx, my } = getCanvasCoords(e, rect);
+
+            if (selectedIdx >= 0) {
+                const corner = hitTestCorner(mx, my);
+                if (corner) {
+                    const l = sel();
+                    isResizing = true; resizeCorner = corner;
+                    resizeStartX = mx; resizeStartY = my;
+                    resizeStartW = l.w; resizeStartH = l.h;
+                    resizeStartImgX = l.x; resizeStartImgY = l.y;
+                    render(); return;
+                }
+            }
+
+            const hit = findLayerAt(mx, my);
+            if (hit >= 0) {
+                selectedIdx = hit; syncSliders();
+                isDragging = true;
+                dragOX = mx - layers[hit].x; dragOY = my - layers[hit].y;
+                render(); return;
+            }
+
+            selectedIdx = -1; syncSliders(); render();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', e => {
+            if (!isDragging && !isResizing) return; e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const { mx, my } = getCanvasCoords(e, rect);
+
+            if (isResizing && selectedIdx >= 0) {
+                const l = sel();
+                const dx = mx - resizeStartX, dy = my - resizeStartY;
+                const aspect = resizeStartW / resizeStartH;
+                const rawDelta = (resizeCorner === 'br') ? (dx + dy) / 2
+                    : (resizeCorner === 'tl') ? -(dx + dy) / 2
+                    : (resizeCorner === 'tr') ? (dx - dy) / 2
+                    : (-dx + dy) / 2;
+                let newW = resizeStartW + rawDelta, newH = newW / aspect;
+                if (newW < 20) { newW = 20; newH = newW / aspect; }
+                if (resizeCorner === 'br') { l.x = resizeStartImgX; l.y = resizeStartImgY; }
+                else if (resizeCorner === 'tl') { l.x = resizeStartImgX + resizeStartW - newW; l.y = resizeStartImgY + resizeStartH - newH; }
+                else if (resizeCorner === 'tr') { l.x = resizeStartImgX; l.y = resizeStartImgY + resizeStartH - newH; }
+                else { l.x = resizeStartImgX + resizeStartW - newW; l.y = resizeStartImgY; }
+                l.w = newW; l.h = newH;
+                const pct = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
+                document.getElementById('sizeSlider').value = Math.min(250, Math.max(20, pct));
+                document.getElementById('sizeVal').textContent = pct + '%';
+                render(); return;
+            }
+
+            if (isDragging && selectedIdx >= 0) {
+                const l = sel();
+                l.x = mx - dragOX; l.y = my - dragOY;
+                render();
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => {
+            isDragging = false; isResizing = false; resizeCorner = null;
+            showBounds = false; render();
+        });
+
+        // Delete selected layer
+        function deleteSelected() {
+            if (selectedIdx < 0) return;
+            layers.splice(selectedIdx, 1);
+            selectedIdx = layers.length ? Math.min(selectedIdx, layers.length - 1) : -1;
+            syncSliders(); render();
+        }
+
+        // Clear all layers
+        function clearDesign() {
+            layers = []; selectedIdx = -1;
+            syncSliders(); render();
+        }
+
+        // Export all layers
+        function exportDesign() {
+            const exp = document.createElement('canvas');
+            exp.width = 1200; exp.height = 1300;
+            const eCtx = exp.getContext('2d');
+            eCtx.drawImage(tshirtImg, 0, 0, 1200, 1300);
+            const scaleX = exp.width / canvas.width, scaleY = exp.height / canvas.height;
+            layers.forEach(l => {
+                const cx = (l.x + l.w / 2) * scaleX, cy = (l.y + l.h / 2) * scaleY;
+                const w = l.w * scaleX, h = l.h * scaleY;
+                eCtx.save();
+                eCtx.translate(cx, cy);
+                eCtx.rotate((l.rotation * Math.PI) / 180);
+                eCtx.drawImage(l.img, -w / 2, -h / 2, w, h);
+                eCtx.restore();
+            });
+            const link = document.createElement('a');
+            link.download = 'luxe-design.png';
+            link.href = exp.toDataURL();
+            link.click();
+        }
+        // ==============================
+        // Comparison Slider — Koi Fish Image
+        // ==============================
+        (function() {
+            const SIZE = 800;
+            const dtfC = document.getElementById('dtfCanvas');
+            const luxeC = document.getElementById('luxeCanvas');
+            dtfC.width = luxeC.width = SIZE;
+            dtfC.height = luxeC.height = SIZE;
+
+            const koiImg = new Image();
+            koiImg.onload = function() {
+                // --- LUXE side: vibrant, full saturation on dark fabric ---
+                const lCtx = luxeC.getContext('2d');
+                // Dark fabric background
+                lCtx.fillStyle = '#111';
+                lCtx.fillRect(0, 0, SIZE, SIZE);
+                // Subtle fabric texture
+                for (let y = 0; y < SIZE; y += 2) {
+                    for (let x = 0; x < SIZE; x += 2) {
+                        lCtx.fillStyle = `rgba(255,255,255,${Math.random() * 0.02})`;
+                        lCtx.fillRect(x, y, 1, 1);
+                    }
+                }
+                // Draw koi pristine — boost saturation + contrast
+                const pad = 80;
+                lCtx.drawImage(koiImg, pad, pad, SIZE - pad * 2, SIZE - pad * 2);
+                // Boost vibrancy with overlay blend
+                lCtx.globalCompositeOperation = 'soft-light';
+                lCtx.fillStyle = 'rgba(255,100,30,0.12)';
+                lCtx.fillRect(0, 0, SIZE, SIZE);
+                lCtx.globalCompositeOperation = 'source-over';
+
+                // --- DTF side: faded, washed out, cracked on dark fabric ---
+                const dCtx = dtfC.getContext('2d');
+                // Dark fabric background
+                dCtx.fillStyle = '#111';
+                dCtx.fillRect(0, 0, SIZE, SIZE);
+                // Heavier fabric texture
+                for (let y = 0; y < SIZE; y += 2) {
+                    for (let x = 0; x < SIZE; x += 2) {
+                        dCtx.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`;
+                        dCtx.fillRect(x, y, 1, 1);
+                    }
+                }
+                // Draw koi faded
+                dCtx.globalAlpha = 0.62;
+                dCtx.drawImage(koiImg, pad, pad, SIZE - pad * 2, SIZE - pad * 2);
+                dCtx.globalAlpha = 1;
+
+                // Desaturate by overlaying grey
+                dCtx.globalCompositeOperation = 'saturation';
+                dCtx.fillStyle = 'hsl(0, 35%, 50%)';
+                dCtx.fillRect(pad, pad, SIZE - pad * 2, SIZE - pad * 2);
+                dCtx.globalCompositeOperation = 'source-over';
+
+                // Fade/wash with semi-transparent dark overlay
+                dCtx.fillStyle = 'rgba(17,17,17,0.22)';
+                dCtx.fillRect(0, 0, SIZE, SIZE);
+
+                // Cracking / peeling lines
+                dCtx.globalAlpha = 0.12;
+                for (let i = 0; i < 60; i++) {
+                    dCtx.beginPath();
+                    const sx = 120 + Math.random() * 560;
+                    const sy = 120 + Math.random() * 560;
+                    dCtx.moveTo(sx, sy);
+                    for (let j = 0; j < 5; j++) {
+                        dCtx.lineTo(sx + (Math.random() - 0.5) * 80, sy + (Math.random() - 0.5) * 80);
+                    }
+                    dCtx.strokeStyle = '#444';
+                    dCtx.lineWidth = 0.4 + Math.random() * 0.8;
+                    dCtx.stroke();
+                }
+                dCtx.globalAlpha = 1;
+
+                // Peeling edge patches
+                dCtx.globalAlpha = 0.06;
+                for (let i = 0; i < 15; i++) {
+                    dCtx.beginPath();
+                    const px = 150 + Math.random() * 500;
+                    const py = 150 + Math.random() * 500;
+                    dCtx.arc(px, py, 8 + Math.random() * 20, 0, Math.PI * 2);
+                    dCtx.fillStyle = '#222';
+                    dCtx.fill();
+                }
+                dCtx.globalAlpha = 1;
+            };
+            koiImg.src = 'koi.png';
+
+            // Comparison slider interaction
+            const container = document.getElementById('compareContainer');
+            const luxeLayer = document.getElementById('luxeLayer');
+            const sliderLine = document.getElementById('compareLine');
+            const sliderHandle = document.getElementById('compareHandle');
+            let sliderActive = false;
+
+            function setSliderPos(x) {
+                const rect = container.getBoundingClientRect();
+                let pct = ((x - rect.left) / rect.width) * 100;
+                pct = Math.max(2, Math.min(98, pct));
+                luxeLayer.style.clipPath = `inset(0 0 0 ${pct}%)`;
+                sliderLine.style.left = pct + '%';
+                sliderHandle.style.left = pct + '%';
+            }
+
+            container.addEventListener('mousedown', e => { sliderActive = true; setSliderPos(e.clientX); });
+            window.addEventListener('mousemove', e => { if (sliderActive) setSliderPos(e.clientX); });
+            window.addEventListener('mouseup', () => sliderActive = false);
+
+            container.addEventListener('touchstart', e => { sliderActive = true; setSliderPos(e.touches[0].clientX); }, { passive: true });
+            window.addEventListener('touchmove', e => { if (sliderActive) setSliderPos(e.touches[0].clientX); }, { passive: true });
+            window.addEventListener('touchend', () => sliderActive = false);
+        })();
+
+    </script>
+</body>
+</html>

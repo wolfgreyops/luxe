@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Six Thirteen — Airport Code Configurator</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Playfair+Display:wght@700&family=Montserrat:wght@400;700;900&family=Raleway:wght@400;700;900&family=Roboto+Condensed:wght@700&family=Anton&family=Archivo+Black&family=Permanent+Marker&family=Lobster&family=Pacifico&family=Dancing+Script:wght@700&family=Sacramento&family=Great+Vibes&family=Stint+Ultra+Expanded&family=Righteous&family=Teko:wght@300..700&family=Bungee&family=Russo+One&family=Black+Ops+One&family=Orbitron:wght@400..900&family=Kanit:wght@400;700;900&family=Saira+Stencil+One&family=Major+Mono+Display&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #7a35f8;
+            --accent-light: #9a65fa;
+            --accent-dark: #5a15d8;
+            --accent-subtle: rgba(122, 53, 248, 0.08);
+            --accent-border: rgba(122, 53, 248, 0.2);
+            --black: #1a1a1a;
+            --dark: #2a2a2a;
+            --sidebar-bg: #f2f2f2;
+            --sidebar-input: #ffffff;
+            --sidebar-input-border: #ddd;
+            --white: #ffffff;
+            --grey: #777777;
+            --text: #2a2a2a;
+            --text-light: #999999;
+            --border: #e0e0e0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+
+        body {
+            font-family: 'Geist', 'Inter', sans-serif;
+            background: var(--white);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        /* ===== FULL-SCREEN LAYOUT ===== */
+        .configurator-page {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ===== LEFT PANEL ===== */
+        .options-panel {
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            border-right: 1px solid var(--border);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .configurator-page.cart-open .options-panel { transform: translateX(-100%); }
+
+        .options-header {
+            padding: 24px 32px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .options-header .logo { display: inline-block; text-decoration: none; }
+        .options-header .logo img { height: 45px; width: auto; display: block; }
+        .options-header .subtitle {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            color: var(--grey);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            font-weight: 400;
+            margin-top: 4px;
+        }
+
+        .options-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+        .options-scroll::-webkit-scrollbar { width: 5px; }
+        .options-scroll::-webkit-scrollbar-track { background: transparent; }
+        .options-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+        /* Tool Groups */
+        .tool-group h4 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        /* Collapsible */
+        .tool-group-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .tool-group-toggle h4 { margin-bottom: 0; pointer-events: none; }
+        .tool-group-toggle .chevron {
+            width: 16px; height: 16px;
+            color: var(--grey);
+            transition: transform 0.3s ease;
+            opacity: 0.5;
+        }
+        .tool-group.collapsed .chevron { transform: rotate(-90deg); }
+        .tool-group.collapsed .tool-group-content { display: none; }
+        .tool-group-content { margin-top: 12px; }
+
+        /* Section Divider */
+        .section-divider { height: 1px; background: var(--border); margin: 2px 0; }
+
+        /* ===== AIRPORT CODE BANK ===== */
+        .airport-search {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--sidebar-input);
+            border: 1px solid var(--sidebar-input-border);
+            color: var(--text);
+            font-family: 'Geist', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.3s;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .airport-search:focus { border-color: var(--accent); }
+        .airport-search::placeholder { color: #aaa; }
+
+        .airport-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            max-height: calc(100vh - 480px);
+            overflow-y: auto;
+        }
+        .airport-grid::-webkit-scrollbar { width: 4px; }
+        .airport-grid::-webkit-scrollbar-track { background: transparent; }
+        .airport-grid::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+        .airport-chip {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: 4px;
+            padding: 8px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .airport-chip:hover {
+            border-color: var(--accent-light);
+            background: var(--accent-subtle);
+        }
+        .airport-chip.active {
+            border-color: var(--accent);
+            background: var(--accent-subtle);
+            box-shadow: 0 0 0 1px var(--accent);
+        }
+        .airport-chip .code {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 1.5px;
+            color: var(--text);
+            display: block;
+        }
+        .airport-chip .city {
+            font-size: 0.55rem;
+            color: var(--grey);
+            letter-spacing: 0.3px;
+            margin-top: 2px;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Font Select */
+        .font-select {
+            width: 100%; padding: 10px 12px;
+            background: var(--sidebar-input); border: 1px solid var(--sidebar-input-border);
+            color: var(--text); font-size: 0.85rem;
+            outline: none; cursor: pointer;
+            -webkit-appearance: none;
+            transition: border-color 0.3s;
+            border-radius: 4px;
+        }
+        .font-select:focus { border-color: var(--accent); }
+        .font-select option { background: var(--white); color: var(--text); }
+
+        /* Color Swatches */
+        .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+        .swatch {
+            width: 36px; height: 36px;
+            border: 2px solid var(--border);
+            cursor: pointer; transition: all 0.3s ease; position: relative;
+            border-radius: 4px;
+        }
+        .swatch:hover { border-color: var(--accent-light); transform: scale(1.08); }
+        .swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+        /* Text Color */
+        .text-color-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .text-color-swatch {
+            width: 28px; height: 28px;
+            border: 2px solid var(--border);
+            cursor: pointer; transition: all 0.2s ease;
+            border-radius: 3px;
+        }
+        .text-color-swatch:hover { transform: scale(1.1); }
+        .text-color-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+        /* Buttons */
+        .btn-export {
+            width: 100%; padding: 14px; background: var(--accent);
+            border: none; color: var(--white);
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.8rem; letter-spacing: 2px;
+            text-transform: uppercase; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 700;
+            border-radius: 6px;
+        }
+        .btn-export:hover { background: var(--accent-dark); }
+
+        /* ===== RIGHT PANEL: PREVIEW ===== */
+        .preview-panel {
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            height: 100vh;
+            overflow: hidden;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .configurator-page.cart-open .preview-panel { transform: translateX(-20vw); }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 95%; height: 96%;
+            max-width: 1100px;
+        }
+        .tshirt-img {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 95%; max-height: 95%;
+            object-fit: contain;
+            pointer-events: none; user-select: none;
+        }
+        #designCanvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        /* Product info */
+        .product-info {
+            position: absolute; top: 20px; left: 24px;
+            text-align: left; z-index: 10;
+        }
+        .product-info .product-name {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.7rem; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--grey);
+        }
+        .product-info .product-detail {
+            font-size: 0.65rem; color: var(--text-light);
+            letter-spacing: 1px; margin-top: 2px;
+        }
+        .size-qty-row {
+            display: flex; gap: 8px;
+            justify-content: flex-start; margin-top: 10px;
+        }
+        .size-qty-box { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .size-qty-box label {
+            font-family: 'Geist', sans-serif; font-size: 0.6rem;
+            font-weight: 600; letter-spacing: 1px;
+            text-transform: uppercase; color: var(--grey);
+        }
+        .size-qty-box input {
+            width: 42px; height: 34px; text-align: center;
+            border: 1px solid var(--border); border-radius: 4px;
+            background: var(--white); font-family: 'Geist', sans-serif;
+            font-size: 0.8rem; font-weight: 500; color: var(--text);
+            outline: none; transition: border-color 0.2s;
+        }
+        .size-qty-box input:focus { border-color: var(--accent); }
+        .size-qty-box input::-webkit-inner-spin-button,
+        .size-qty-box input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .size-qty-box input[type=number] { -moz-appearance: textfield; }
+
+        /* Back link */
+        .back-link { position: absolute; top: 20px; right: 24px; z-index: 10; }
+        .back-link a {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.7rem; letter-spacing: 1.5px;
+            text-transform: uppercase; color: var(--grey);
+            text-decoration: none; transition: color 0.3s;
+        }
+        .back-link a:hover { color: var(--accent); }
+
+        /* ===== CART PANEL ===== */
+        .cart-panel {
+            position: fixed; top: 0; right: 0;
+            width: 25vw; min-width: 320px; height: 100vh;
+            background: var(--sidebar-bg);
+            border-left: 1px solid var(--border);
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 100; display: flex;
+            flex-direction: column; overflow-y: auto;
+        }
+        .configurator-page.cart-open .cart-panel { transform: translateX(0); }
+        .cart-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 24px 24px 16px; border-bottom: 1px solid var(--border);
+        }
+        .cart-header h3 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.85rem; letter-spacing: 2px; color: var(--text);
+        }
+        .cart-close {
+            background: none; border: none; font-size: 1.4rem;
+            color: var(--grey); cursor: pointer; padding: 4px 8px; transition: color 0.2s;
+        }
+        .cart-close:hover { color: var(--text); }
+        .cart-body { padding: 24px; flex: 1; }
+        .cart-preview {
+            width: 100%; border-radius: 8px; overflow: hidden;
+            margin-bottom: 20px; background: var(--white); border: 1px solid var(--border);
+        }
+        .cart-preview img { width: 100%; display: block; }
+        .cart-product-name {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.72rem; letter-spacing: 1.5px;
+            text-transform: uppercase; color: var(--text); margin-bottom: 4px;
+        }
+        .cart-product-detail {
+            font-size: 0.65rem; color: var(--text-light);
+            letter-spacing: 0.5px; margin-bottom: 16px;
+        }
+        .cart-line-items { border-top: 1px solid var(--border); padding-top: 12px; }
+        .cart-line {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 0; font-family: 'Geist', sans-serif; font-size: 0.78rem; color: var(--text);
+        }
+        .cart-line .size-label { font-weight: 600; letter-spacing: 1px; text-transform: uppercase; min-width: 36px; }
+        .cart-line .qty-label { color: var(--grey); }
+        .cart-line .line-price { font-weight: 600; }
+        .cart-divider { height: 1px; background: var(--border); margin: 12px 0; }
+        .cart-total-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 0; font-family: 'Geist', sans-serif;
+        }
+        .cart-total-row .total-label {
+            font-size: 0.75rem; letter-spacing: 1px;
+            text-transform: uppercase; color: var(--grey); font-weight: 600;
+        }
+        .cart-total-row .total-value { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+        .cart-qty-summary {
+            font-size: 0.68rem; color: var(--text-light); margin-top: 2px; text-align: right;
+        }
+        .cart-footer { padding: 16px 24px 24px; border-top: 1px solid var(--border); }
+        .btn-checkout {
+            width: 100%; padding: 14px; background: var(--accent);
+            border: none; color: var(--white);
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.8rem; letter-spacing: 2px;
+            text-transform: uppercase; cursor: pointer;
+            transition: all 0.3s ease; font-weight: 700; border-radius: 6px;
+        }
+        .btn-checkout:hover { background: var(--accent-dark); }
+        .btn-back-edit {
+            width: 100%; padding: 12px; background: none;
+            border: 1px solid var(--border); color: var(--grey);
+            font-family: 'Geist', sans-serif; font-size: 0.72rem;
+            letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; transition: all 0.2s; margin-top: 8px; border-radius: 6px;
+        }
+        .btn-back-edit:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ===== STRIPE CHECKOUT MODAL ===== */
+        .checkout-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px); z-index: 200; display: none;
+            align-items: center; justify-content: center;
+        }
+        .checkout-overlay.active { display: flex; }
+        .checkout-modal {
+            background: var(--white); border-radius: 12px;
+            width: 625px; max-width: 95vw; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .checkout-modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px 12px; border-bottom: 1px solid var(--border);
+        }
+        .checkout-modal-header h3 {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.8rem; letter-spacing: 2px; color: var(--text);
+        }
+        .checkout-modal-close {
+            background: none; border: none; font-size: 1.4rem;
+            color: var(--grey); cursor: pointer; padding: 4px 8px; transition: color 0.2s;
+        }
+        .checkout-modal-close:hover { color: var(--text); }
+        #checkout-container { min-height: 400px; padding: 0; }
+        .checkout-loading {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 300px; color: var(--grey); font-family: 'Geist', sans-serif;
+            font-size: 0.85rem; letter-spacing: 0.5px;
+        }
+        .checkout-error {
+            padding: 24px; color: #e53e3e; font-family: 'Geist', sans-serif;
+            font-size: 0.82rem; text-align: center;
+        }
+        .order-confirmed { text-align: center; padding: 60px 24px; }
+        .order-confirmed h2 {
+            font-size: 1.1rem; letter-spacing: 2px; margin-bottom: 12px; color: var(--text);
+        }
+        .order-confirmed p { color: var(--grey); font-size: 0.85rem; }
+
+        /* Font preview label */
+        .font-preview-label {
+            font-size: 0.65rem;
+            color: var(--text-light);
+            letter-spacing: 0.3px;
+            margin-top: 8px;
+            text-align: center;
+            padding: 8px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        /* Destination toggle */
+        .dest-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            padding: 10px 0 4px;
+        }
+        .dest-toggle-switch {
+            width: 38px; height: 20px;
+            background: var(--border);
+            border-radius: 10px;
+            position: relative;
+            transition: background 0.3s;
+            flex-shrink: 0;
+        }
+        .dest-toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 16px; height: 16px;
+            background: var(--white);
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .dest-toggle.active .dest-toggle-switch {
+            background: var(--accent);
+        }
+        .dest-toggle.active .dest-toggle-switch::after {
+            transform: translateX(18px);
+        }
+        .dest-toggle-label {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--grey);
+            font-weight: 500;
+        }
+        .dest-section {
+            display: none;
+            margin-top: 10px;
+        }
+        .dest-section.visible {
+            display: block;
+        }
+        .dest-section .airport-grid {
+            max-height: calc(100vh - 620px);
+        }
+
+        /* ===== MOBILE MENU TOGGLE ===== */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 14px; left: 14px;
+            z-index: 150;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 44px; height: 44px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+        }
+        .mobile-menu-btn:hover { background: var(--sidebar-bg); }
+        .mobile-menu-btn svg { width: 22px; height: 22px; color: var(--text); }
+        .mobile-menu-btn.is-open svg.icon-menu { display: none; }
+        .mobile-menu-btn:not(.is-open) svg.icon-close { display: none; }
+
+        /* Mobile overlay behind drawer */
+        .mobile-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 89;
+        }
+        .mobile-overlay.visible { display: block; }
+
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            html, body { overflow: auto; height: auto; }
+
+            .mobile-menu-btn { display: flex; }
+
+            .mobile-top-bar {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                height: 54px;
+                background: var(--white);
+                border-bottom: 1px solid var(--border);
+                z-index: 100;
+            }
+            .mobile-top-bar img {
+                height: 30px;
+                width: auto;
+            }
+
+            .configurator-page {
+                display: flex;
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                min-height: 100dvh;
+                width: 100%;
+            }
+
+            /* Options panel becomes a slide-out drawer */
+            .options-panel {
+                position: fixed;
+                top: 0; left: 0;
+                width: 85vw;
+                max-width: 360px;
+                height: 100vh;
+                height: 100dvh;
+                z-index: 90;
+                transform: translateX(-100%);
+                border-right: 1px solid var(--border);
+                box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            }
+            .options-panel.drawer-open {
+                transform: translateX(0);
+            }
+            .configurator-page.cart-open .options-panel { transform: translateX(-100%); }
+
+            .options-header {
+                padding: 16px 20px 14px;
+            }
+            .options-header .logo img { height: 36px; }
+            .options-header .subtitle { font-size: 0.6rem; }
+
+            .options-scroll {
+                padding: 16px 20px 24px;
+                gap: 16px;
+            }
+
+            .airport-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+                max-height: 40vh;
+            }
+            .dest-section .airport-grid {
+                max-height: 35vh;
+            }
+
+            .airport-chip {
+                padding: 10px 4px;
+            }
+            .airport-chip .code { font-size: 0.82rem; }
+            .airport-chip .city { font-size: 0.52rem; }
+
+            .airport-search {
+                padding: 12px;
+                font-size: 16px; /* prevent iOS zoom */
+            }
+
+            .font-select {
+                padding: 12px;
+                font-size: 16px; /* prevent iOS zoom */
+            }
+
+            .swatch { width: 34px; height: 34px; }
+            .text-color-swatch { width: 32px; height: 32px; }
+
+            /* Preview: single column — shirt → details → qty → order */
+            .preview-panel {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                height: auto;
+                min-height: auto;
+                padding: 54px 0 0;
+                overflow: visible;
+            }
+            .configurator-page.cart-open .preview-panel { transform: none; }
+
+            /* Shirt takes 60% of viewport */
+            .canvas-wrapper {
+                width: 100%;
+                height: 60vh;
+                max-width: 100%;
+                aspect-ratio: auto;
+            }
+
+            .tshirt-img {
+                max-width: 90%;
+                max-height: 90%;
+            }
+
+            /* Product name/detail below shirt */
+            .product-info {
+                position: static;
+                width: 100%;
+                padding: 10px 16px 0;
+                text-align: center;
+                z-index: auto;
+            }
+            .product-info .product-name { font-size: 0.7rem; }
+            .product-info .product-detail { font-size: 0.62rem; margin-top: 2px; }
+
+            /* Qty row flows below product info */
+            .size-qty-row {
+                justify-content: center;
+                gap: 8px;
+                margin-top: 12px;
+                padding: 0 16px;
+            }
+            .size-qty-box input {
+                width: 46px; height: 38px;
+                font-size: 16px;
+            }
+            .size-qty-box label { font-size: 0.58rem; }
+
+            /* Mobile order button below qty */
+            .mobile-order-btn {
+                display: block;
+                width: calc(100% - 32px);
+                margin: 16px auto 24px;
+                margin-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+                padding: 14px 20px;
+                background: var(--accent);
+                border: none;
+                border-radius: 6px;
+                color: var(--white);
+                font-family: 'Geist', 'Oswald', sans-serif;
+                font-size: 0.82rem;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                font-weight: 700;
+                cursor: pointer;
+                position: static;
+            }
+            .mobile-order-btn:active { background: var(--accent-dark); }
+
+            /* Hide desktop order button on mobile */
+            .btn-export { display: none; }
+
+            /* Hide buttons when cart is open */
+            .configurator-page.cart-open .mobile-order-btn { display: none !important; }
+            .configurator-page.cart-open ~ .mobile-menu-btn { display: none !important; }
+            .configurator-page.cart-open ~ .mobile-top-bar { display: none !important; }
+
+            /* Back link */
+            .back-link {
+                top: 14px; right: 14px;
+            }
+            .back-link a { font-size: 0.6rem; }
+
+            /* Cart panel full-width on mobile */
+            .cart-panel {
+                width: 100vw;
+                min-width: unset;
+            }
+            .configurator-page.cart-open .cart-panel { transform: translateX(0); }
+
+            /* Checkout modal full-screen mobile */
+            .checkout-modal {
+                width: 100vw;
+                max-width: 100vw;
+                max-height: 100vh;
+                max-height: 100dvh;
+                border-radius: 0;
+                height: 100vh;
+                height: 100dvh;
+            }
+            #checkout-container { min-height: 60vh; }
+        }
+
+        /* Tablet tweaks */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .configurator-page {
+                grid-template-columns: 280px 1fr;
+            }
+            .options-scroll { padding: 18px 20px 24px; }
+            .options-header { padding: 18px 20px 14px; }
+            .airport-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* Mobile top bar with logo (hidden on desktop) */
+        .mobile-top-bar { display: none; }
+
+        /* Mobile order btn hidden on desktop */
+        .mobile-order-btn { display: none; }
+
+        /* Disabled order button */
+        .mobile-order-btn.disabled,
+        .btn-export.disabled {
+            background: #bbb;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mobile Menu Toggle -->
+<button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileDrawer()">
+    <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+</button>
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileDrawer()"></div>
+
+<div class="configurator-page">
+    <!-- LEFT: Options Panel -->
+    <div class="options-panel" id="optionsPanel">
+        <div class="options-header">
+            <a href="index.html" class="logo"><img src="Diner 1C purple.png" alt="Six Thirteen"></a>
+            <div class="subtitle">Airport Code Collection</div>
+        </div>
+
+        <div class="options-scroll">
+            <!-- Airport Code Bank -->
+            <div class="tool-group">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Select Airport Code</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <input type="text" class="airport-search" id="airportSearch" placeholder="Search by code or city..." oninput="filterAirports()">
+                    <div class="airport-grid" id="airportGrid"></div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Add Destination -->
+            <div class="tool-group">
+                <div class="dest-toggle" id="destToggle" onclick="toggleDestination()">
+                    <div class="dest-toggle-switch"></div>
+                    <span class="dest-toggle-label">Add Destination</span>
+                </div>
+                <div class="dest-section" id="destSection">
+                    <input type="text" class="airport-search" id="destSearch" placeholder="Search destination..." oninput="filterDestAirports()">
+                    <div class="airport-grid" id="destGrid"></div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Font Selection -->
+            <div class="tool-group">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Font</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <select class="font-select" id="fontSelect" onchange="updatePreview()">
+                        <option value="Bebas Neue">Bebas Neue</option>
+                        <option value="Oswald">Oswald</option>
+                        <option value="Anton">Anton</option>
+                        <option value="Archivo Black">Archivo Black</option>
+                        <option value="Montserrat">Montserrat</option>
+                        <option value="Raleway">Raleway</option>
+                        <option value="Roboto Condensed">Roboto Condensed</option>
+                        <option value="Teko">Teko</option>
+                        <option value="Bungee">Bungee</option>
+                        <option value="Russo One">Russo One</option>
+                        <option value="Black Ops One">Black Ops One</option>
+                        <option value="Orbitron">Orbitron</option>
+                        <option value="Kanit">Kanit</option>
+                        <option value="Saira Stencil One">Saira Stencil One</option>
+                        <option value="Major Mono Display">Major Mono Display</option>
+                        <option value="Stint Ultra Expanded">Stint Ultra Expanded</option>
+                        <option value="Righteous">Righteous</option>
+                        <option value="Permanent Marker">Permanent Marker</option>
+                        <option value="Playfair Display">Playfair Display</option>
+                    </select>
+                    <div class="font-preview-label" id="fontPreview" style="font-family: 'Bebas Neue'; font-size: 1.4rem; letter-spacing: 3px;">PHL</div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Text Color -->
+            <div class="tool-group">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Text Color</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <div class="text-color-row">
+                        <div class="text-color-swatch active" style="background:#000000" data-color="#000000" onclick="setTextColor(this)"></div>
+                        <div class="text-color-swatch" style="background:#ffffff;border-color:#ccc" data-color="#ffffff" onclick="setTextColor(this)"></div>
+                        <div class="text-color-swatch" style="background:#C9A96E" data-color="#C9A96E" onclick="setTextColor(this)"></div>
+                        <div class="text-color-swatch" style="background:#c0392b" data-color="#c0392b" onclick="setTextColor(this)"></div>
+                        <div class="text-color-swatch" style="background:#1a2744" data-color="#1a2744" onclick="setTextColor(this)"></div>
+                        <div class="text-color-swatch" style="background:#1a3a2a" data-color="#1a3a2a" onclick="setTextColor(this)"></div>
+                        <div class="text-color-swatch" style="background:#5a1a2a" data-color="#5a1a2a" onclick="setTextColor(this)"></div>
+                        <div class="text-color-swatch" style="background:#6a7db8" data-color="#6a7db8" onclick="setTextColor(this)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Shirt Color -->
+            <div class="tool-group collapsed">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>Shirt Color</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <div class="color-swatches">
+                        <div class="swatch active" data-img="tees/5001_STAPLE_TEE_BLACK.jpg" data-name="Black" style="background:#1a1a1a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_WHITE.jpg" data-name="White" style="background:#f0f0f0" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_NAVY.jpg" data-name="Navy" style="background:#1a2744" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_CHARCOAL.jpg" data-name="Charcoal" style="background:#3a3a3a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_ORCHID.jpg" data-name="Orchid" style="background:#d4b8c4" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_LAPIS.jpg" data-name="Lapis" style="background:#6a7db8" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_RED.jpg" data-name="Red" style="background:#c0392b" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_BURGUNDY.jpg" data-name="Burgundy" style="background:#5a1a2a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_FOREST_GREEN.jpg" data-name="Forest Green" style="background:#1a3a2a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_COBALT.jpg" data-name="Cobalt" style="background:#2d4a8a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_SAND.jpg" data-name="Sand" style="background:#c4a67a" onclick="setShirt(this)"></div>
+                        <div class="swatch" data-img="tees/5001_STAPLE_TEE_BONE.jpg" data-name="Bone" style="background:#d8cfc0" onclick="setShirt(this)"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Order Button -->
+            <div class="tool-group">
+                <button class="btn-export disabled" onclick="orderNow()" disabled>Order Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Preview Panel -->
+    <div class="preview-panel">
+        <div class="back-link">
+            <a href="index.html">&larr; Back to Site</a>
+        </div>
+
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <img class="tshirt-img" id="tshirtImg" src="tees/5001_STAPLE_TEE_BLACK.jpg" alt="T-Shirt">
+            <canvas id="designCanvas"></canvas>
+        </div>
+
+        <div class="product-info">
+            <div class="product-name">5001 Staple Tee — <span id="colorName">Black</span></div>
+            <div class="product-detail">Premium 5.3oz Cotton &bull; $12.99/tee &bull; Shipping $9.99 + $1/ea</div>
+            <div class="size-qty-row">
+                <div class="size-qty-box"><label>S</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>M</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>L</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>XL</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>2XL</label><input type="number" min="0" value="0" placeholder="0"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Order Button (fixed at bottom on small screens) -->
+    <button class="mobile-order-btn disabled" id="mobileOrderBtn" onclick="orderNow()">Order Now</button>
+
+    <!-- CART PANEL -->
+    <div class="cart-panel" id="cartPanel">
+        <div class="cart-header">
+            <h3>Your Order</h3>
+            <button class="cart-close" onclick="closeCart()">&times;</button>
+        </div>
+        <div class="cart-body">
+            <div class="cart-preview">
+                <canvas id="cartPreviewCanvas"></canvas>
+            </div>
+            <div class="cart-product-name" id="cartProductName"></div>
+            <div class="cart-product-detail" id="cartProductDetail"></div>
+            <div class="cart-line-items" id="cartLineItems"></div>
+            <div class="cart-divider"></div>
+            <div class="cart-total-row">
+                <span class="total-label">Total</span>
+                <span class="total-value" id="cartTotal"></span>
+            </div>
+            <div class="cart-qty-summary" id="cartQtySummary"></div>
+        </div>
+        <div class="cart-footer">
+            <button class="btn-checkout" onclick="checkout()">Checkout</button>
+            <button class="btn-back-edit" onclick="closeCart()">Back to Editor</button>
+        </div>
+    </div>
+</div>
+
+<!-- Stripe Checkout Modal -->
+<div class="checkout-overlay" id="checkoutOverlay">
+    <div class="checkout-modal">
+        <div class="checkout-modal-header">
+            <h3>Secure Checkout</h3>
+            <button class="checkout-modal-close" onclick="closeCheckoutModal()">&times;</button>
+        </div>
+        <div id="checkout-container">
+            <div class="checkout-loading" id="checkoutLoading">Loading checkout...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Top Bar with centered logo -->
+<div class="mobile-top-bar">
+    <a href="index.html"><img src="Diner 1C purple.png" alt="Six Thirteen"></a>
+</div>
+
+<script>
+    // ==============================
+    // Stripe Config
+    // ==============================
+    window.STRIPE_PK = null;
+    fetch('/config')
+        .then(r => r.json())
+        .then(cfg => { window.STRIPE_PK = cfg.publishableKey; })
+        .catch(() => { console.warn('Could not load Stripe config.'); });
+
+    // ==============================
+    // Collapsible
+    // ==============================
+    function toggleGroup(toggleEl) {
+        toggleEl.closest('.tool-group').classList.toggle('collapsed');
+    }
+
+    // ==============================
+    // Mobile Drawer
+    // ==============================
+    function toggleMobileDrawer() {
+        const panel = document.getElementById('optionsPanel');
+        const btn = document.getElementById('mobileMenuBtn');
+        const overlay = document.getElementById('mobileOverlay');
+        const isOpen = panel.classList.contains('drawer-open');
+        if (isOpen) {
+            closeMobileDrawer();
+        } else {
+            panel.classList.add('drawer-open');
+            btn.classList.add('is-open');
+            overlay.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    function closeMobileDrawer() {
+        const panel = document.getElementById('optionsPanel');
+        const btn = document.getElementById('mobileMenuBtn');
+        const overlay = document.getElementById('mobileOverlay');
+        panel.classList.remove('drawer-open');
+        btn.classList.remove('is-open');
+        overlay.classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+    // Close drawer when an airport chip is selected (better UX on mobile)
+    function closeMobileDrawerIfMobile() {
+        if (window.innerWidth <= 768) {
+            closeMobileDrawer();
+        }
+    }
+
+    // ==============================
+    // Order Button State (grayed out until airport selected + qty)
+    // ==============================
+    function updateOrderBtn() {
+        const hasCode = !!selectedAirport;
+        const sizeInputs = document.querySelectorAll('.size-qty-box input');
+        let totalQty = 0;
+        sizeInputs.forEach(inp => { totalQty += (parseInt(inp.value) || 0); });
+        const ready = hasCode && totalQty > 0;
+
+        const mobileBtn = document.getElementById('mobileOrderBtn');
+        if (mobileBtn) {
+            if (ready) { mobileBtn.classList.remove('disabled'); mobileBtn.removeAttribute('disabled'); }
+            else { mobileBtn.classList.add('disabled'); mobileBtn.setAttribute('disabled', 'true'); }
+        }
+        const desktopBtn = document.querySelector('.btn-export');
+        if (desktopBtn) {
+            if (ready) { desktopBtn.classList.remove('disabled'); desktopBtn.removeAttribute('disabled'); }
+            else { desktopBtn.classList.add('disabled'); desktopBtn.setAttribute('disabled', 'true'); }
+        }
+    }
+
+    // Listen to qty changes
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.size-qty-box input').forEach(inp => {
+            inp.addEventListener('input', updateOrderBtn);
+        });
+        updateOrderBtn();
+    });
+
+    // ==============================
+    // Airport Codes — All Major US Airports
+    // ==============================
+    const AIRPORTS = [
+        { code: 'ATL', city: 'Atlanta' },
+        { code: 'LAX', city: 'Los Angeles' },
+        { code: 'ORD', city: 'Chicago O\'Hare' },
+        { code: 'DFW', city: 'Dallas/Fort Worth' },
+        { code: 'DEN', city: 'Denver' },
+        { code: 'JFK', city: 'New York JFK' },
+        { code: 'SFO', city: 'San Francisco' },
+        { code: 'SEA', city: 'Seattle' },
+        { code: 'LAS', city: 'Las Vegas' },
+        { code: 'MCO', city: 'Orlando' },
+        { code: 'EWR', city: 'Newark' },
+        { code: 'MIA', city: 'Miami' },
+        { code: 'PHX', city: 'Phoenix' },
+        { code: 'IAH', city: 'Houston Bush' },
+        { code: 'BOS', city: 'Boston' },
+        { code: 'MSP', city: 'Minneapolis' },
+        { code: 'FLL', city: 'Fort Lauderdale' },
+        { code: 'DTW', city: 'Detroit' },
+        { code: 'PHL', city: 'Philadelphia' },
+        { code: 'LGA', city: 'New York LaGuardia' },
+        { code: 'BWI', city: 'Baltimore' },
+        { code: 'SLC', city: 'Salt Lake City' },
+        { code: 'DCA', city: 'Washington Reagan' },
+        { code: 'IAD', city: 'Washington Dulles' },
+        { code: 'SAN', city: 'San Diego' },
+        { code: 'TPA', city: 'Tampa' },
+        { code: 'PDX', city: 'Portland' },
+        { code: 'HNL', city: 'Honolulu' },
+        { code: 'STL', city: 'St. Louis' },
+        { code: 'BNA', city: 'Nashville' },
+        { code: 'AUS', city: 'Austin' },
+        { code: 'MSY', city: 'New Orleans' },
+        { code: 'RDU', city: 'Raleigh-Durham' },
+        { code: 'SJC', city: 'San Jose' },
+        { code: 'SMF', city: 'Sacramento' },
+        { code: 'CLE', city: 'Cleveland' },
+        { code: 'OAK', city: 'Oakland' },
+        { code: 'PIT', city: 'Pittsburgh' },
+        { code: 'IND', city: 'Indianapolis' },
+        { code: 'CMH', city: 'Columbus' },
+        { code: 'SAT', city: 'San Antonio' },
+        { code: 'CVG', city: 'Cincinnati' },
+        { code: 'MKE', city: 'Milwaukee' },
+        { code: 'JAX', city: 'Jacksonville' },
+        { code: 'RNO', city: 'Reno' },
+        { code: 'OMA', city: 'Omaha' },
+        { code: 'MEM', city: 'Memphis' },
+        { code: 'BUF', city: 'Buffalo' },
+        { code: 'ABQ', city: 'Albuquerque' },
+        { code: 'OKC', city: 'Oklahoma City' },
+        { code: 'RIC', city: 'Richmond' },
+        { code: 'BDL', city: 'Hartford' },
+        { code: 'SDF', city: 'Louisville' },
+        { code: 'CHS', city: 'Charleston' },
+        { code: 'PBI', city: 'West Palm Beach' },
+        { code: 'MCI', city: 'Kansas City' },
+        { code: 'HOU', city: 'Houston Hobby' },
+        { code: 'MDW', city: 'Chicago Midway' },
+        { code: 'RSW', city: 'Fort Myers' },
+        { code: 'SNA', city: 'Santa Ana/OC' },
+        { code: 'DAL', city: 'Dallas Love' },
+        { code: 'BUR', city: 'Burbank' },
+        { code: 'ONT', city: 'Ontario CA' },
+        { code: 'TUS', city: 'Tucson' },
+        { code: 'ELP', city: 'El Paso' },
+        { code: 'BOI', city: 'Boise' },
+        { code: 'ANC', city: 'Anchorage' },
+        { code: 'OGG', city: 'Maui' },
+        { code: 'LIH', city: 'Kauai' },
+        { code: 'KOA', city: 'Kona' },
+        { code: 'SAV', city: 'Savannah' },
+        { code: 'MYR', city: 'Myrtle Beach' },
+        { code: 'GRR', city: 'Grand Rapids' },
+        { code: 'DSM', city: 'Des Moines' },
+        { code: 'SYR', city: 'Syracuse' },
+        { code: 'ROC', city: 'Rochester' },
+        { code: 'ALB', city: 'Albany' },
+        { code: 'MSN', city: 'Madison' },
+        { code: 'PVD', city: 'Providence' },
+        { code: 'TUL', city: 'Tulsa' },
+        { code: 'BHM', city: 'Birmingham' },
+        { code: 'GSO', city: 'Greensboro' },
+        { code: 'LIT', city: 'Little Rock' },
+        { code: 'ORF', city: 'Norfolk' },
+        { code: 'PWM', city: 'Portland ME' },
+        { code: 'ICT', city: 'Wichita' },
+        { code: 'HSV', city: 'Huntsville' },
+        { code: 'DAY', city: 'Dayton' },
+        { code: 'GSP', city: 'Greenville SC' },
+        { code: 'XNA', city: 'NW Arkansas' },
+        { code: 'LEX', city: 'Lexington' },
+        { code: 'COS', city: 'Colorado Springs' },
+        { code: 'PSP', city: 'Palm Springs' },
+        { code: 'GEG', city: 'Spokane' },
+        { code: 'FAT', city: 'Fresno' },
+        { code: 'CAK', city: 'Akron' },
+        { code: 'AVL', city: 'Asheville' },
+    ];
+
+    let selectedAirport = null;
+    let selectedDest = null;
+    let destMode = false;
+
+    function buildAirportGrid(airports) {
+        const grid = document.getElementById('airportGrid');
+        grid.innerHTML = '';
+        airports.forEach(ap => {
+            const chip = document.createElement('div');
+            chip.className = 'airport-chip' + (selectedAirport === ap.code ? ' active' : '');
+            chip.innerHTML = `<span class="code">${ap.code}</span><span class="city">${ap.city}</span>`;
+            chip.onclick = () => selectAirport(ap.code, chip);
+            grid.appendChild(chip);
+        });
+    }
+
+    function buildDestGrid(airports) {
+        const grid = document.getElementById('destGrid');
+        grid.innerHTML = '';
+        airports.forEach(ap => {
+            const chip = document.createElement('div');
+            chip.className = 'airport-chip' + (selectedDest === ap.code ? ' active' : '');
+            chip.innerHTML = `<span class="code">${ap.code}</span><span class="city">${ap.city}</span>`;
+            chip.onclick = () => selectDest(ap.code, chip);
+            grid.appendChild(chip);
+        });
+    }
+
+    function filterAirports() {
+        const q = document.getElementById('airportSearch').value.toLowerCase().trim();
+        if (!q) { buildAirportGrid(AIRPORTS); return; }
+        const filtered = AIRPORTS.filter(ap =>
+            ap.code.toLowerCase().includes(q) || ap.city.toLowerCase().includes(q)
+        );
+        buildAirportGrid(filtered);
+    }
+
+    function filterDestAirports() {
+        const q = document.getElementById('destSearch').value.toLowerCase().trim();
+        if (!q) { buildDestGrid(AIRPORTS); return; }
+        const filtered = AIRPORTS.filter(ap =>
+            ap.code.toLowerCase().includes(q) || ap.city.toLowerCase().includes(q)
+        );
+        buildDestGrid(filtered);
+    }
+
+    function selectAirport(code, chipEl) {
+        selectedAirport = code;
+        document.querySelectorAll('#airportGrid .airport-chip').forEach(c => c.classList.remove('active'));
+        if (chipEl) chipEl.classList.add('active');
+
+        const preview = document.getElementById('fontPreview');
+        preview.textContent = destMode && selectedDest ? code + ' → ' + selectedDest : code;
+        preview.style.fontFamily = `'${document.getElementById('fontSelect').value}'`;
+
+        updatePreview();
+        updateOrderBtn();
+    }
+
+    function selectDest(code, chipEl) {
+        selectedDest = code;
+        document.querySelectorAll('#destGrid .airport-chip').forEach(c => c.classList.remove('active'));
+        if (chipEl) chipEl.classList.add('active');
+
+        const preview = document.getElementById('fontPreview');
+        preview.textContent = selectedAirport ? selectedAirport + ' → ' + code : code;
+        preview.style.fontFamily = `'${document.getElementById('fontSelect').value}'`;
+
+        updatePreview();
+    }
+
+    function toggleDestination() {
+        destMode = !destMode;
+        document.getElementById('destToggle').classList.toggle('active', destMode);
+        document.getElementById('destSection').classList.toggle('visible', destMode);
+        if (destMode) {
+            buildDestGrid(AIRPORTS);
+        } else {
+            selectedDest = null;
+            const preview = document.getElementById('fontPreview');
+            preview.textContent = selectedAirport || 'PHL';
+        }
+        updatePreview();
+    }
+
+    // Initialize grid
+    buildAirportGrid(AIRPORTS);
+
+    // ==============================
+    // Canvas & Preview Rendering
+    // ==============================
+    const canvas = document.getElementById('designCanvas');
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('canvasWrapper');
+    const tshirtImg = document.getElementById('tshirtImg');
+    let textColor = '#000000';
+
+    function sizeCanvas() {
+        const rect = wrapper.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        render();
+    }
+
+    window.addEventListener('resize', sizeCanvas);
+    tshirtImg.addEventListener('load', sizeCanvas);
+    sizeCanvas();
+
+    function getPrintZone() {
+        const cw = canvas.width, ch = canvas.height;
+        // Bounding box centered on the shirt chest area
+        return { x: cw * 0.30, y: ch * 0.22, w: cw * 0.40, h: ch * 0.32 };
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!selectedAirport) return;
+
+        const fontFamily = document.getElementById('fontSelect').value;
+        const fontSpec = `700 48px '${fontFamily}'`;
+
+        document.fonts.load(fontSpec).then(() => {
+            drawDesign(ctx, canvas.width, canvas.height);
+        }).catch(() => {
+            drawDesign(ctx, canvas.width, canvas.height);
+        });
+    }
+
+    function drawDesign(targetCtx, cw, ch) {
+        targetCtx.clearRect(0, 0, cw, ch);
+        if (!selectedAirport) return;
+
+        if (destMode && selectedDest) {
+            drawFlightPath(targetCtx, cw, ch);
+        } else {
+            drawSingleCode(targetCtx, cw, ch);
+        }
+    }
+
+    // ---- Single code centered on chest ----
+    function drawSingleCode(targetCtx, cw, ch) {
+        const zone = getPrintZone();
+        const fontFamily = document.getElementById('fontSelect').value;
+
+        let fontSize = 200;
+        targetCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+        let measured = targetCtx.measureText(selectedAirport);
+        let textW = measured.width;
+
+        const maxW = zone.w * 0.92;
+        const maxH = zone.h * 0.85;
+        if (textW > maxW) fontSize = Math.floor(fontSize * (maxW / textW));
+        const textH = fontSize * 1.1;
+        if (textH > maxH) fontSize = Math.floor(fontSize * (maxH / textH));
+
+        targetCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+        measured = targetCtx.measureText(selectedAirport);
+        textW = measured.width;
+
+        const textX = zone.x + (zone.w - textW) / 2;
+        const textY = zone.y + zone.h / 2;
+
+        targetCtx.fillStyle = textColor;
+        targetCtx.textBaseline = 'middle';
+        targetCtx.textAlign = 'left';
+        targetCtx.fillText(selectedAirport, textX, textY);
+    }
+
+    // ---- Flight path template: origin → destination ----
+    // Stays strictly inside getPrintZone() chest bounding box
+    function drawFlightPath(targetCtx, cw, ch) {
+        const z = getPrintZone(); // strict chest zone — do NOT expand
+        const fontFamily = document.getElementById('fontSelect').value;
+        const color = textColor;
+
+        // --- Font sizing: LARGE bold codes like the template ---
+        const maxCodeW = z.w * 0.44;
+        let fontSize = 140;
+        targetCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+        const widest = Math.max(
+            targetCtx.measureText(selectedAirport).width,
+            targetCtx.measureText(selectedDest).width
+        );
+        if (widest > maxCodeW) fontSize = Math.floor(fontSize * (maxCodeW / widest));
+        if (fontSize > z.h * 0.30) fontSize = Math.floor(z.h * 0.30);
+
+        targetCtx.font = `700 ${fontSize}px '${fontFamily}'`;
+
+        // --- Draw origin code (top-left of zone) ---
+        targetCtx.fillStyle = color;
+        targetCtx.textBaseline = 'top';
+        targetCtx.textAlign = 'left';
+        targetCtx.fillText(selectedAirport, z.x, z.y);
+
+        // --- Draw destination code (top-right of zone) ---
+        targetCtx.textAlign = 'right';
+        targetCtx.fillText(selectedDest, z.x + z.w, z.y);
+
+        // --- Flight path: all geometry inside the zone ---
+        const lineW = Math.max(2, z.w * 0.012);
+        const dashOn = z.w * 0.025;
+        const dashOff = z.w * 0.016;
+
+        // Key Y positions
+        const artTop = z.y + fontSize * 1.15;   // just below text
+        const artBottom = z.y + z.h;             // bottom of zone
+
+        // Loop (prominent circle under origin side, like the template)
+        const loopR = z.w * 0.07;
+        const loopCX = z.x + z.w * 0.15;
+        const loopCY = artTop + (artBottom - artTop) * 0.28;
+
+        // Starting dot (above the loop)
+        const dotR = z.w * 0.016;
+        targetCtx.beginPath();
+        targetCtx.arc(loopCX, loopCY - loopR - dotR * 2.5, dotR, 0, Math.PI * 2);
+        targetCtx.fillStyle = color;
+        targetCtx.fill();
+
+        // Dashed loop circle
+        targetCtx.beginPath();
+        targetCtx.arc(loopCX, loopCY, loopR, 0, Math.PI * 2);
+        targetCtx.strokeStyle = color;
+        targetCtx.lineWidth = lineW;
+        targetCtx.setLineDash([dashOn, dashOff]);
+        targetCtx.lineCap = 'round';
+        targetCtx.stroke();
+        targetCtx.setLineDash([]);
+
+        // S-curve from bottom of loop up to destination side
+        // Start: bottom of the loop
+        const sStartX = loopCX;
+        const sStartY = loopCY + loopR;
+        // End: near top-right, below dest code — airplane lands here
+        const sEndX = z.x + z.w * 0.82;
+        const sEndY = artTop + (artBottom - artTop) * 0.06;
+
+        // Control points: bold S-shape sweeping down then up like the template
+        const cp1x = z.x + z.w * 0.15;
+        const cp1y = artBottom + z.h * 0.04;
+        const cp2x = z.x + z.w * 0.62;
+        const cp2y = artTop - z.h * 0.10;
+
+        targetCtx.beginPath();
+        targetCtx.moveTo(sStartX, sStartY);
+        targetCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, sEndX, sEndY);
+        targetCtx.strokeStyle = color;
+        targetCtx.lineWidth = lineW;
+        targetCtx.setLineDash([dashOn, dashOff]);
+        targetCtx.stroke();
+        targetCtx.setLineDash([]);
+
+        // --- Airplane at the end of the curve ---
+        const planeSize = z.w * 0.12;
+
+        // Tangent angle at curve end
+        const t = 0.97;
+        const it = 1 - t;
+        const nearX = it*it*it*sStartX + 3*it*it*t*cp1x + 3*it*t*t*cp2x + t*t*t*sEndX;
+        const nearY = it*it*it*sStartY + 3*it*it*t*cp1y + 3*it*t*t*cp2y + t*t*t*sEndY;
+        const angle = Math.atan2(sEndY - nearY, sEndX - nearX);
+
+        drawAirplane(targetCtx, sEndX, sEndY, planeSize, angle, color);
+    }
+
+    function drawAirplane(ctx2, x, y, size, angle, color) {
+        ctx2.save();
+        ctx2.translate(x, y);
+        ctx2.rotate(angle - Math.PI / 2); // Airplane points "up" by default, rotate to flight direction
+
+        const s = size / 2;
+        ctx2.fillStyle = color;
+        ctx2.beginPath();
+
+        // Fuselage
+        ctx2.moveTo(0, -s);            // nose
+        ctx2.lineTo(s * 0.15, -s * 0.3);
+        // Right wing
+        ctx2.lineTo(s * 0.8, s * 0.1);
+        ctx2.lineTo(s * 0.75, s * 0.25);
+        ctx2.lineTo(s * 0.15, s * 0.1);
+        // Right tail
+        ctx2.lineTo(s * 0.15, s * 0.55);
+        ctx2.lineTo(s * 0.45, s * 0.85);
+        ctx2.lineTo(s * 0.35, s);
+        ctx2.lineTo(0, s * 0.7);
+        // Left tail (mirror)
+        ctx2.lineTo(-s * 0.35, s);
+        ctx2.lineTo(-s * 0.45, s * 0.85);
+        ctx2.lineTo(-s * 0.15, s * 0.55);
+        // Left wing
+        ctx2.lineTo(-s * 0.15, s * 0.1);
+        ctx2.lineTo(-s * 0.75, s * 0.25);
+        ctx2.lineTo(-s * 0.8, s * 0.1);
+        ctx2.lineTo(-s * 0.15, -s * 0.3);
+
+        ctx2.closePath();
+        ctx2.fill();
+        ctx2.restore();
+    }
+
+    function updatePreview() {
+        const preview = document.getElementById('fontPreview');
+        const font = document.getElementById('fontSelect').value;
+        preview.style.fontFamily = `'${font}'`;
+        if (destMode && selectedDest && selectedAirport) {
+            preview.textContent = selectedAirport + ' → ' + selectedDest;
+        } else {
+            preview.textContent = selectedAirport || 'PHL';
+        }
+
+        document.fonts.load(`700 48px '${font}'`).then(() => {
+            render();
+        }).catch(() => {
+            render();
+        });
+    }
+
+    function setTextColor(el) {
+        document.querySelectorAll('.text-color-swatch').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        textColor = el.dataset.color;
+        render();
+    }
+
+    function setShirt(el) {
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        tshirtImg.src = el.dataset.img;
+        document.getElementById('colorName').textContent = el.dataset.name || '';
+    }
+
+    // ==============================
+    // Pricing & Order
+    // ==============================
+    const PRICE_PER_TEE = 12.99;
+    const SHIPPING_BASE = 9.99;
+    const SHIPPING_EXTRA = 1.00;
+
+    function calcShipping(qty) {
+        return SHIPPING_BASE + Math.max(0, qty - 1) * SHIPPING_EXTRA;
+    }
+
+    function orderNow() {
+        if (!selectedAirport) {
+            alert('Please select an airport code before ordering.');
+            return;
+        }
+
+        const sizeInputs = document.querySelectorAll('.size-qty-box input');
+        const sizes = ['S', 'M', 'L', 'XL', '2XL'];
+        const order = {};
+        let totalQty = 0;
+        sizeInputs.forEach((input, i) => {
+            const qty = parseInt(input.value) || 0;
+            if (qty > 0) { order[sizes[i]] = qty; totalQty += qty; }
+        });
+        if (totalQty === 0) {
+            alert('Please enter quantities for at least one size.');
+            return;
+        }
+
+        // Generate cart preview
+        const cartCanvas = document.getElementById('cartPreviewCanvas');
+        const cCtx = cartCanvas.getContext('2d');
+        const previewSize = 600;
+        cartCanvas.width = previewSize;
+        cartCanvas.height = Math.round(previewSize * (canvas.height / canvas.width));
+        cartCanvas.style.width = '100%';
+        cartCanvas.style.display = 'block';
+
+        // Draw shirt
+        cCtx.drawImage(tshirtImg, 0, 0, cartCanvas.width, cartCanvas.height);
+
+        // Draw design on cart preview canvas
+        if (selectedAirport) {
+            // Use a temporary scaling approach: draw at cart canvas dimensions
+            const savedCW = canvas.width;
+            const savedCH = canvas.height;
+            // Temporarily pretend our canvas is the cart canvas for getPrintZone
+            canvas.width = cartCanvas.width;
+            canvas.height = cartCanvas.height;
+            drawDesign(cCtx, cartCanvas.width, cartCanvas.height);
+            // Restore main canvas dimensions
+            canvas.width = savedCW;
+            canvas.height = savedCH;
+            render(); // Re-render main canvas
+        }
+
+        // Populate cart
+        const colorName = document.getElementById('colorName').textContent;
+        const fontName = document.getElementById('fontSelect').value;
+        const productLabel = destMode && selectedDest
+            ? `${selectedAirport} → ${selectedDest} Flight Tee`
+            : `${selectedAirport} Airport Tee`;
+        document.getElementById('cartProductName').textContent = `${productLabel} — ${colorName}`;
+        document.getElementById('cartProductDetail').textContent = `${fontName} font &bull; $${PRICE_PER_TEE.toFixed(2)} per tee`;
+
+        const lineItemsEl = document.getElementById('cartLineItems');
+        lineItemsEl.innerHTML = '';
+        const subtotal = totalQty * PRICE_PER_TEE;
+        const shipping = calcShipping(totalQty);
+
+        Object.entries(order).forEach(([size, qty]) => {
+            const lineTotal = (qty * PRICE_PER_TEE).toFixed(2);
+            const line = document.createElement('div');
+            line.className = 'cart-line';
+            line.innerHTML = `<span class="size-label">${size}</span><span class="qty-label">&times; ${qty} @ $${PRICE_PER_TEE.toFixed(2)}</span><span class="line-price">$${lineTotal}</span>`;
+            lineItemsEl.appendChild(line);
+        });
+
+        const shipLine = document.createElement('div');
+        shipLine.className = 'cart-line';
+        const shipDetail = totalQty === 1 ? 'Flat rate' : `$${SHIPPING_BASE.toFixed(2)} + $${SHIPPING_EXTRA.toFixed(2)} &times; ${totalQty - 1} extra`;
+        shipLine.innerHTML = `<span class="size-label">Shipping</span><span class="qty-label">${shipDetail}</span><span class="line-price">$${shipping.toFixed(2)}</span>`;
+        lineItemsEl.appendChild(shipLine);
+
+        const grandTotal = subtotal + shipping;
+        document.getElementById('cartTotal').textContent = `$${grandTotal.toFixed(2)}`;
+        document.getElementById('cartQtySummary').textContent = `${totalQty} tee${totalQty !== 1 ? 's' : ''} + shipping`;
+
+        const orderLabel = destMode && selectedDest
+            ? `${selectedAirport} → ${selectedDest}`
+            : selectedAirport;
+        window._orderData = { order, totalQty, subtotal, grandTotal, airportCode: orderLabel };
+
+        document.querySelector('.configurator-page').classList.add('cart-open');
+    }
+
+    function closeCart() {
+        document.querySelector('.configurator-page').classList.remove('cart-open');
+    }
+
+    // ==============================
+    // Stripe Embedded Checkout
+    // ==============================
+    let stripeCheckoutInstance = null;
+
+    async function checkout() {
+        const d = window._orderData;
+        if (!d) return;
+
+        const items = Object.entries(d.order).map(([size, quantity]) => ({ size, quantity }));
+        const shippingAmount = Math.round(calcShipping(d.totalQty) * 100);
+
+        const overlay = document.getElementById('checkoutOverlay');
+        const container = document.getElementById('checkout-container');
+        const loading = document.getElementById('checkoutLoading');
+        overlay.classList.add('active');
+        container.innerHTML = '';
+        container.appendChild(loading);
+        loading.style.display = 'flex';
+        loading.textContent = 'Loading checkout...';
+
+        try {
+            const res = await fetch('/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items,
+                    shippingAmount,
+                    productName: `${d.airportCode} Airport Tee`,
+                    returnPage: 'airports.html',
+                }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to create checkout session');
+            }
+
+            const { clientSecret } = await res.json();
+            container.innerHTML = '';
+
+            const stripe = Stripe(window.STRIPE_PK);
+            stripeCheckoutInstance = await stripe.initEmbeddedCheckout({ clientSecret });
+            stripeCheckoutInstance.mount('#checkout-container');
+
+        } catch (err) {
+            loading.style.display = 'none';
+            container.innerHTML = `<div class="checkout-error">
+                <p>${err.message}</p>
+                <p style="margin-top:12px;font-size:0.72rem;color:var(--grey)">Make sure the server is running.</p>
+            </div>`;
+        }
+    }
+
+    function closeCheckoutModal() {
+        const overlay = document.getElementById('checkoutOverlay');
+        overlay.classList.remove('active');
+        if (stripeCheckoutInstance) {
+            stripeCheckoutInstance.destroy();
+            stripeCheckoutInstance = null;
+        }
+        document.getElementById('checkout-container').innerHTML =
+            '<div class="checkout-loading" id="checkoutLoading">Loading checkout...</div>';
+    }
+
+    // Handle return from Stripe
+    (function checkReturn() {
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session_id');
+        if (!sessionId) return;
+
+        fetch(`/session-status?session_id=${sessionId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'complete') {
+                    const overlay = document.getElementById('checkoutOverlay');
+                    const container = document.getElementById('checkout-container');
+                    overlay.classList.add('active');
+                    container.innerHTML = `<div class="order-confirmed">
+                        <h2>Order Confirmed</h2>
+                        <p>Thank you for your order! A confirmation has been sent to <strong>${data.customer_email || 'your email'}</strong>.</p>
+                        <button class="btn-checkout" style="margin-top:24px;max-width:200px" onclick="closeCheckoutModal(); window.history.replaceState({}, '', window.location.pathname);">Continue</button>
+                    </div>`;
+                }
+            })
+            .catch(() => {});
+    })();
+</script>
+
+</body>
+</html>
