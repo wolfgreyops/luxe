@@ -1,0 +1,139 @@
+{% comment %}
+  ============================================================
+  Six Thirteen — Cart Design Preview
+  ============================================================
+  Shows mockup preview images for Custom DTF line items in the cart.
+
+  INSTALLATION:
+  1. Go to Online Store → Themes → Edit Code
+  2. Under "Snippets", click "Add a new snippet"
+  3. Name it: cart-design-preview
+  4. Paste this entire file and Save
+  5. Open your theme's layout/theme.liquid
+  6. Add this BEFORE </body>:
+         {% render 'cart-design-preview' %}
+  ============================================================
+{% endcomment %}
+
+{% if template == 'cart' or request.page_type == 'cart' %}
+<style>
+  .six13-preview-wrap {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #eee;
+  }
+  .six13-preview-wrap img {
+    max-width: 180px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    display: block;
+    margin-top: 6px;
+  }
+  .six13-preview-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #7a35f8;
+    margin-bottom: 4px;
+  }
+  .six13-art-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.72rem;
+    color: #7a35f8;
+    text-decoration: none;
+    padding: 4px 10px;
+    border: 1px solid #7a35f8;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .six13-art-link:hover {
+    background: #7a35f8;
+    color: #fff;
+  }
+</style>
+
+<script>
+(function() {
+  function enhanceCart() {
+    fetch('/cart.js')
+      .then(r => r.json())
+      .then(cart => {
+        cart.items.forEach((item, idx) => {
+          if (!item.properties) return;
+
+          const mockupUrl = item.properties['Design Preview'];
+          const artFiles = [];
+
+          // Collect art file URLs
+          Object.entries(item.properties).forEach(([key, val]) => {
+            if (key.startsWith('_Art File') && val && val.startsWith('http')) {
+              artFiles.push({ label: key.replace('_', ''), url: val });
+            }
+          });
+
+          if (!mockupUrl && artFiles.length === 0) return;
+
+          // Find the cart line item element in the DOM
+          // Most Shopify themes use data attributes or sequential cart items
+          const cartItems = document.querySelectorAll(
+            '.cart-item, .cart__item, [data-cart-item], .cart-item--product, .line-item, tr[data-line-item]'
+          );
+          const lineEl = cartItems[idx];
+          if (!lineEl || lineEl.dataset.six13Enhanced) return;
+          lineEl.dataset.six13Enhanced = 'true';
+
+          const wrap = document.createElement('div');
+          wrap.className = 'six13-preview-wrap';
+
+          // Mockup preview
+          if (mockupUrl && mockupUrl.startsWith('http')) {
+            wrap.innerHTML += `
+              <div class="six13-preview-label">Your Design</div>
+              <a href="${mockupUrl}" target="_blank">
+                <img src="${mockupUrl}" alt="Design Preview" loading="lazy">
+              </a>
+            `;
+          }
+
+          // Art file download links
+          if (artFiles.length > 0) {
+            const linksHtml = artFiles.map(f =>
+              `<a class="six13-art-link" href="${f.url}" target="_blank" download>⬇ ${f.label}</a>`
+            ).join(' ');
+            wrap.innerHTML += `
+              <div style="margin-top:8px;">
+                <div class="six13-preview-label">Print Files</div>
+                ${linksHtml}
+              </div>
+            `;
+          }
+
+          // Insert after the product details within the line item
+          const detailsEl = lineEl.querySelector(
+            '.cart-item__details, .cart__item-details, .cart-item__info, .product-details, td:nth-child(2)'
+          ) || lineEl;
+          detailsEl.appendChild(wrap);
+        });
+      })
+      .catch(err => console.error('[Six13] Cart enhance error:', err));
+  }
+
+  // Run on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(enhanceCart, 500));
+  } else {
+    setTimeout(enhanceCart, 500);
+  }
+
+  // Re-run on AJAX cart updates
+  const observer = new MutationObserver(() => setTimeout(enhanceCart, 500));
+  const target = document.querySelector('main') || document.querySelector('#MainContent') || document.body;
+  observer.observe(target, { childList: true, subtree: true });
+})();
+</script>
+{% endif %}
