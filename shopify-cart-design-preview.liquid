@@ -2,7 +2,8 @@
   ============================================================
   Six Thirteen — Cart Design Preview
   ============================================================
-  Shows mockup preview images for Custom DTF line items in the cart.
+  Replaces the default product thumbnail with the mockup preview
+  for Custom DTF line items, and hides the raw "Design Preview" URL.
 
   INSTALLATION:
   1. Go to Online Store → Themes → Edit Code
@@ -16,44 +17,11 @@
 {% endcomment %}
 
 <style>
-  .six13-preview-wrap {
-    margin-top: 10px;
-    padding: 10px;
-    background: #f9f9f9;
-    border-radius: 8px;
-    border: 1px solid #eee;
-  }
-  .six13-preview-wrap img {
-    max-width: 180px;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    display: block;
-    margin-top: 6px;
-  }
-  .six13-preview-label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #7a35f8;
-    margin-bottom: 4px;
-  }
-  .six13-art-link {
-    display: inline-block;
-    margin-top: 6px;
-    font-size: 0.72rem;
-    color: #7a35f8;
-    text-decoration: none;
-    padding: 4px 10px;
-    border: 1px solid #7a35f8;
-    border-radius: 4px;
-    transition: all 0.2s;
-  }
-  .six13-art-link:hover {
-    background: #7a35f8;
-    color: #fff;
-  }
+  /* Hide the raw "Design Preview" URL text from cart properties list */
+  .cart-item__property [data-six13-hide],
+  .cart__item .product-option [data-six13-hide],
+  .cart-item .cart-item__details [data-six13-hide],
+  .six13-hide-prop { display: none !important; }
 </style>
 
 <script>
@@ -70,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
           var mockupUrl = item.properties['Design Preview'] || null;
           var artFiles = [];
 
-          // Collect art file URLs
           Object.keys(item.properties).forEach(function(key) {
             var val = item.properties[key];
             if (key.indexOf('_Art File') === 0 && val && val.indexOf('http') === 0) {
@@ -82,13 +49,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
           if (!mockupUrl && artFiles.length === 0) return;
 
-          // Find the cart line item element in the DOM
-          // Try multiple selectors that common Shopify themes use
+          // Find cart line items in DOM
           var cartItems = document.querySelectorAll(
             'cart-item, .cart-item, .cart__item, [data-cart-item], .cart-item--product, .line-item, .cart__row, .cart-drawer__item, .cart__table-row, table.cart tbody tr, .cart__content .cart__items > *, [data-line-item], .cart-items .cart-item'
           );
-
-          console.log('[Six13] Found', cartItems.length, 'cart DOM items');
 
           var lineEl = cartItems[idx];
           if (!lineEl) {
@@ -98,29 +62,33 @@ document.addEventListener('DOMContentLoaded', function() {
           if (lineEl.dataset && lineEl.dataset.six13Enhanced) return;
           if (lineEl.dataset) lineEl.dataset.six13Enhanced = 'true';
 
-          var wrap = document.createElement('div');
-          wrap.className = 'six13-preview-wrap';
-
-          // Mockup preview
+          // 1. Replace the product thumbnail with the mockup
           if (mockupUrl && mockupUrl.indexOf('http') === 0) {
-            wrap.innerHTML += '<div class="six13-preview-label">Your Design</div>' +
-              '<a href="' + mockupUrl + '" target="_blank">' +
-              '<img src="' + mockupUrl + '" alt="Design Preview" loading="lazy">' +
-              '</a>';
+            var img = lineEl.querySelector('img');
+            if (img) {
+              img.src = mockupUrl;
+              img.srcset = '';
+              img.alt = 'Your Custom Design';
+              img.style.objectFit = 'contain';
+              img.style.background = '#f5f5f5';
+              console.log('[Six13] Replaced product image for item', idx);
+            }
           }
 
-          // Art file download links
-          if (artFiles.length > 0) {
-            var linksHtml = artFiles.map(function(f) {
-              return '<a class="six13-art-link" href="' + f.url + '" target="_blank" download>⬇ ' + f.label + '</a>';
-            }).join(' ');
-            wrap.innerHTML += '<div style="margin-top:8px;">' +
-              '<div class="six13-preview-label">Print Files</div>' +
-              linksHtml + '</div>';
-          }
-
-          // Append to the line item element
-          lineEl.appendChild(wrap);
+          // 2. Hide the raw "Design Preview: https://..." text in properties
+          var allProps = lineEl.querySelectorAll('dt, dd, li, span, p, div');
+          allProps.forEach(function(el) {
+            var text = el.textContent || '';
+            if (text.indexOf('Design Preview') !== -1 && text.indexOf('http') !== -1) {
+              el.style.display = 'none';
+            }
+            // Also hide if it's a label + value pair
+            if (text.trim() === 'Design Preview' || text.trim() === 'Design Preview:') {
+              el.style.display = 'none';
+              // Hide the next sibling too (the URL value)
+              if (el.nextElementSibling) el.nextElementSibling.style.display = 'none';
+            }
+          });
         });
       })
       .catch(function(err) {
