@@ -2235,28 +2235,40 @@
 
     async function uploadDesignFiles() {
         const uploads = { artFiles: [], mockupUrl: null };
+        console.log('[Configurator] Starting upload for', layers.length, 'layers');
 
         // 1. Upload each art layer's current state (includes bg removal, etc.)
         for (let i = 0; i < layers.length; i++) {
             const layer = layers[i];
+            console.log(`[Configurator] Layer ${i}: type=${layer.sourceType}, name=${layer.sourceName}, hasSourceUrl=${!!layer.sourceUrl}`);
             const dataUrl = exportLayerAsDataUrl(layer);
             const name = layer.sourceName || `art-layer-${i + 1}.png`;
 
             if (dataUrl && dataUrl.startsWith('data:')) {
-                // Successfully exported from canvas — upload the processed version
+                console.log(`[Configurator] Layer ${i}: exporting as data URL (${dataUrl.length} chars)`);
                 const url = await uploadToBlob(dataUrl, name, 'image/png');
                 if (url) uploads.artFiles.push({ type: layer.sourceType, url, name });
+                else console.warn(`[Configurator] Layer ${i}: upload returned null`);
             } else if (layer.sourceUrl && !layer.sourceUrl.startsWith('data:')) {
-                // Cross-origin image (stock art) — upload via server-side fetch
+                console.log(`[Configurator] Layer ${i}: using remote URL`, layer.sourceUrl.substring(0, 80));
                 const url = await uploadToBlob(layer.sourceUrl, name, 'image/jpeg');
                 if (url) uploads.artFiles.push({ type: layer.sourceType, url, name });
+                else console.warn(`[Configurator] Layer ${i}: upload returned null`);
+            } else {
+                console.warn(`[Configurator] Layer ${i}: no exportable data (dataUrl=${typeof dataUrl}, sourceUrl=${layer.sourceUrl})`);
             }
         }
 
         // 2. Generate and upload the mockup (shirt + design composite)
-        const mockupDataUrl = generateDesignPreview();
-        uploads.mockupUrl = await uploadToBlob(mockupDataUrl, 'mockup.jpg', 'image/jpeg');
+        try {
+            const mockupDataUrl = generateDesignPreview();
+            console.log('[Configurator] Mockup generated:', mockupDataUrl ? mockupDataUrl.length + ' chars' : 'null');
+            uploads.mockupUrl = await uploadToBlob(mockupDataUrl, 'mockup.jpg', 'image/jpeg');
+        } catch (e) {
+            console.error('[Configurator] Mockup generation failed (tainted canvas?):', e.message);
+        }
 
+        console.log('[Configurator] Upload results:', uploads.artFiles.length, 'art files, mockup:', !!uploads.mockupUrl);
         return uploads;
     }
 

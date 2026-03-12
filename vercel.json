@@ -13,6 +13,7 @@
     { "src": "/config", "dest": "/api/config.js" },
     { "src": "/create-checkout-session", "dest": "/api/create-checkout-session.js" },
     { "src": "/session-status", "dest": "/api/session-status.js" },
-    { "src": "/api/upload", "dest": "/api/upload.js" }
+    { "src": "/api/upload", "dest": "/api/upload.js" },
+    { "src": "/api/upload-test", "dest": "/api/upload-test.js" }
   ]
 }
