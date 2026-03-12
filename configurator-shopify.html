@@ -1812,9 +1812,15 @@
             }
         }
         oCtx.putImageData(imageData, 0, 0);
+        const processedDataUrl = off.toDataURL();
         const img = new Image();
-        img.onload = function() { l.img = img; render(); };
-        img.src = off.toDataURL();
+        img.onload = function() {
+            l.img = img;
+            l.sourceUrl = processedDataUrl;  // Update source to bg-removed version
+            l.sourceName = (l.sourceName || 'art').replace(/\.\w+$/, '') + '-nobg.png';
+            render();
+        };
+        img.src = processedDataUrl;
     }
 
     // ==============================
@@ -2173,38 +2179,36 @@
         return exp.toDataURL('image/jpeg', 0.8);
     }
 
-    // Upload a base64 data URL or fetch a remote image and upload it
+    // Upload a base64 data URL or a remote URL to Vercel Blob
     async function uploadToBlob(dataOrUrl, filename, contentType) {
-        let base64Data;
-        if (dataOrUrl.startsWith('data:')) {
-            // Already a data URL — strip the prefix
-            base64Data = dataOrUrl.split(',')[1];
-        } else {
-            // Remote URL (stock art) — fetch and convert to base64
-            try {
-                const resp = await fetch(dataOrUrl);
-                const arrayBuf = await resp.arrayBuffer();
-                const bytes = new Uint8Array(arrayBuf);
-                let binary = '';
-                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-                base64Data = btoa(binary);
-            } catch (e) {
-                console.error('[Configurator] Could not fetch remote image for upload:', e);
-                return dataOrUrl; // fallback: return original URL
-            }
-        }
-
         try {
+            let body;
+
+            if (dataOrUrl.startsWith('data:')) {
+                // Data URL — strip prefix, send base64
+                body = {
+                    filename,
+                    contentType: contentType || 'image/png',
+                    data: dataOrUrl.split(',')[1],
+                };
+            } else {
+                // Remote URL (stock art) — let server fetch it to avoid CORS
+                body = {
+                    filename,
+                    contentType: contentType || 'image/jpeg',
+                    remoteUrl: dataOrUrl,
+                };
+            }
+
             const res = await fetch('/api/upload', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    filename: filename,
-                    contentType: contentType || 'image/png',
-                    data: base64Data,
-                }),
+                body: JSON.stringify(body),
             });
-            if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Upload failed (${res.status}): ${errText}`);
+            }
             const result = await res.json();
             console.log('[Configurator] Uploaded:', filename, '→', result.url);
             return result.url;
@@ -2214,18 +2218,38 @@
         }
     }
 
+    // Export a layer's current image (as rendered on canvas) to a data URL
+    function exportLayerAsDataUrl(layer) {
+        try {
+            const c = document.createElement('canvas');
+            c.width = layer.img.naturalWidth || layer.img.width;
+            c.height = layer.img.naturalHeight || layer.img.height;
+            const ctx = c.getContext('2d');
+            ctx.drawImage(layer.img, 0, 0);
+            return c.toDataURL('image/png');
+        } catch (e) {
+            console.warn('[Configurator] Could not export layer (cross-origin?):', e);
+            return layer.sourceUrl; // fallback to stored source
+        }
+    }
+
     async function uploadDesignFiles() {
         const uploads = { artFiles: [], mockupUrl: null };
 
-        // 1. Upload each art layer's original file
-        for (const layer of layers) {
-            if (layer.sourceUrl) {
-                const url = await uploadToBlob(
-                    layer.sourceUrl,
-                    layer.sourceName || `art-${layer.sourceType}.png`,
-                    layer.sourceType === 'stock' ? 'image/jpeg' : 'image/png'
-                );
-                if (url) uploads.artFiles.push({ type: layer.sourceType, url, name: layer.sourceName });
+        // 1. Upload each art layer's current state (includes bg removal, etc.)
+        for (let i = 0; i < layers.length; i++) {
+            const layer = layers[i];
+            const dataUrl = exportLayerAsDataUrl(layer);
+            const name = layer.sourceName || `art-layer-${i + 1}.png`;
+
+            if (dataUrl && dataUrl.startsWith('data:')) {
+                // Successfully exported from canvas — upload the processed version
+                const url = await uploadToBlob(dataUrl, name, 'image/png');
+                if (url) uploads.artFiles.push({ type: layer.sourceType, url, name });
+            } else if (layer.sourceUrl && !layer.sourceUrl.startsWith('data:')) {
+                // Cross-origin image (stock art) — upload via server-side fetch
+                const url = await uploadToBlob(layer.sourceUrl, name, 'image/jpeg');
+                if (url) uploads.artFiles.push({ type: layer.sourceType, url, name });
             }
         }
 
@@ -2289,7 +2313,7 @@
                         <button class="btn-back-edit" style="margin-top:16px;max-width:260px" onclick="closeCheckoutModal()">Close</button>
                     </div>`;
                 }
-            }, 10000);
+            }, 30000);
         } else {
             // ── Running standalone: redirect to Shopify cart ──
             loading.textContent = 'Adding to Shopify cart...';

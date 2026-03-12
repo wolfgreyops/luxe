@@ -10,14 +10,28 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { filename, contentType, data } = req.body;
+    const { filename, contentType, data, remoteUrl } = req.body;
 
-    if (!filename || !data) {
-      return res.status(400).json({ error: 'Missing filename or data' });
+    if (!filename) {
+      return res.status(400).json({ error: 'Missing filename' });
     }
 
-    // data is base64-encoded
-    const buffer = Buffer.from(data, 'base64');
+    let buffer;
+
+    if (data) {
+      // Base64-encoded data
+      buffer = Buffer.from(data, 'base64');
+    } else if (remoteUrl) {
+      // Fetch remote image (e.g., stock art from Pixabay)
+      const response = await fetch(remoteUrl);
+      if (!response.ok) {
+        return res.status(400).json({ error: `Failed to fetch remote URL: ${response.status}` });
+      }
+      const arrayBuf = await response.arrayBuffer();
+      buffer = Buffer.from(arrayBuf);
+    } else {
+      return res.status(400).json({ error: 'Missing data or remoteUrl' });
+    }
 
     // Upload to Vercel Blob
     const blob = await put(`orders/${Date.now()}-${filename}`, buffer, {
