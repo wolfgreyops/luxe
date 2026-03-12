@@ -16,14 +16,6 @@
   ============================================================
 {% endcomment %}
 
-<style>
-  /* Hide the raw "Design Preview" URL text from cart properties list */
-  .cart-item__property [data-six13-hide],
-  .cart__item .product-option [data-six13-hide],
-  .cart-item .cart-item__details [data-six13-hide],
-  .six13-hide-prop { display: none !important; }
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   function enhanceCart() {
@@ -32,71 +24,78 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(function(cart) {
         console.log('[Six13] Cart data:', cart.items.length, 'items');
 
+        // Collect all mockup URLs from cart items that have them
+        var mockups = [];
         cart.items.forEach(function(item, idx) {
           if (!item.properties) return;
-
           var mockupUrl = item.properties['Design Preview'] || null;
-          var artFiles = [];
-
-          Object.keys(item.properties).forEach(function(key) {
-            var val = item.properties[key];
-            if (key.indexOf('_Art File') === 0 && val && val.indexOf('http') === 0) {
-              artFiles.push({ label: key.replace('_', ''), url: val });
-            }
-          });
-
-          console.log('[Six13] Item', idx, '- mockup:', mockupUrl, '- art files:', artFiles.length);
-
-          if (!mockupUrl && artFiles.length === 0) return;
-
-          // Find cart line items in DOM
-          var cartItems = document.querySelectorAll(
-            'cart-item, .cart-item, .cart__item, [data-cart-item], .cart-item--product, .line-item, .cart__row, .cart-drawer__item, .cart__table-row, table.cart tbody tr, .cart__content .cart__items > *, [data-line-item], .cart-items .cart-item'
-          );
-
-          var lineEl = cartItems[idx];
-          if (!lineEl) {
-            console.warn('[Six13] Could not find DOM element for cart item', idx);
-            return;
-          }
-          if (lineEl.dataset && lineEl.dataset.six13Enhanced) return;
-          if (lineEl.dataset) lineEl.dataset.six13Enhanced = 'true';
-
-          // 1. Replace the product thumbnail with the mockup
           if (mockupUrl && mockupUrl.indexOf('http') === 0) {
-            var img = lineEl.querySelector('img');
-            if (img) {
-              img.src = mockupUrl;
-              img.srcset = '';
-              img.alt = 'Your Custom Design';
-              img.style.objectFit = 'contain';
-              img.style.background = '#f5f5f5';
-              console.log('[Six13] Replaced product image for item', idx);
+            mockups.push({ idx: idx, url: mockupUrl, productImage: item.image });
+            console.log('[Six13] Item', idx, 'has mockup:', mockupUrl);
+          }
+        });
+
+        if (mockups.length === 0) {
+          console.log('[Six13] No items with mockup URLs');
+          return;
+        }
+
+        // Strategy: find all product images on the page and replace them
+        // Shopify cart images come from the CDN (cdn.shopify.com or the store domain /cdn/)
+        var allImages = document.querySelectorAll('img');
+        var productImages = [];
+
+        allImages.forEach(function(img) {
+          var src = img.src || '';
+          // Match Shopify CDN product images
+          if (src.indexOf('/cdn/shop/') !== -1 || src.indexOf('cdn.shopify.com') !== -1) {
+            // Check this is likely a cart product image (not a logo, icon, etc.)
+            // Cart product images are typically 100-300px
+            var w = img.naturalWidth || img.width || img.offsetWidth;
+            if (w > 40 || img.classList.contains('media-style') || img.closest('[class*="cart"]') || img.closest('[class*="line"]')) {
+              productImages.push(img);
             }
           }
-
-          // 2. Hide the raw "Design Preview: https://..." text in properties
-          var allProps = lineEl.querySelectorAll('dt, dd, li, span, p, div');
-          allProps.forEach(function(el) {
-            var text = el.textContent || '';
-            if (text.indexOf('Design Preview') !== -1 && text.indexOf('http') !== -1) {
-              el.style.display = 'none';
-            }
-            // Also hide if it's a label + value pair
-            if (text.trim() === 'Design Preview' || text.trim() === 'Design Preview:') {
-              el.style.display = 'none';
-              // Hide the next sibling too (the URL value)
-              if (el.nextElementSibling) el.nextElementSibling.style.display = 'none';
-            }
-          });
         });
+
+        console.log('[Six13] Found', productImages.length, 'product images in cart');
+
+        // Match product images to mockups by order
+        // If there's only 1 mockup and 1 product image, it's a direct match
+        // For multiple items, match by index
+        mockups.forEach(function(m, i) {
+          var img = productImages[m.idx] || productImages[i];
+          if (img) {
+            img.src = m.url;
+            img.srcset = '';
+            img.alt = 'Your Custom Design';
+            img.style.objectFit = 'contain';
+            img.style.background = '#f5f5f5';
+            console.log('[Six13] Swapped image for item', m.idx);
+          } else {
+            console.warn('[Six13] No product image found for item', m.idx);
+          }
+        });
+
+        // Hide the raw "Design Preview: https://..." text
+        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+        while (walker.nextNode()) {
+          var node = walker.currentNode;
+          if (node.textContent.indexOf('Design Preview') !== -1) {
+            var parent = node.parentElement;
+            if (parent && parent.textContent.indexOf('http') !== -1) {
+              // This is the "Design Preview: https://..." line — hide it
+              parent.style.display = 'none';
+              console.log('[Six13] Hid Design Preview text');
+            }
+          }
+        }
       })
       .catch(function(err) {
         console.error('[Six13] Cart enhance error:', err);
       });
   }
 
-  // Run after a short delay to let the cart page render
   setTimeout(enhanceCart, 800);
 });
 </script>
