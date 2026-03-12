@@ -183,9 +183,10 @@
           });
         }
 
-        // Attach mockup preview URL (no underscore prefix so it's visible to customer)
+        // Attach mockup preview URL (underscore prefix hides from checkout/emails)
+        // Cart snippet swaps the product image with the mockup visually
         if (mockupUrl) {
-          properties['Design Preview'] = mockupUrl;
+          properties['_Design Preview'] = mockupUrl;
         }
 
         console.log(`[Shopify] Adding to cart: variant=${variantId}, qty=${quantity}, size=${size}, properties:`, properties);

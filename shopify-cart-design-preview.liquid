@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         cart.items.forEach(function(item, idx) {
           if (!item.properties) return;
-          var mockupUrl = item.properties['Design Preview'] || null;
+          var mockupUrl = item.properties['_Design Preview'] || item.properties['Design Preview'] || null;
           if (!mockupUrl || mockupUrl.indexOf('http') === -1) return;
 
           console.log('[Six13] Item', idx, 'has mockup:', mockupUrl);
@@ -68,18 +68,8 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         });
 
-        // Hide the raw "Design Preview: https://..." text
-        var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-        while (walker.nextNode()) {
-          var node = walker.currentNode;
-          if (node.textContent.indexOf('Design Preview') !== -1) {
-            var parent = node.parentElement;
-            if (parent && parent.textContent.indexOf('http') !== -1) {
-              parent.style.display = 'none';
-              console.log('[Six13] Hid Design Preview text');
-            }
-          }
-        }
+        // No need to hide URLs — _Design Preview is auto-hidden by Shopify
+        // (underscore-prefixed properties are hidden from customer-facing pages)
       })
       .catch(function(err) {
         console.error('[Six13] Cart enhance error:', err);
