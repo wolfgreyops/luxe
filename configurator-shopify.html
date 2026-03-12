@@ -1432,7 +1432,7 @@
         return { x: cw * 0.30, y: ch * 0.22, w: cw * 0.40, h: ch * 0.40 };
     }
 
-    function addLayer(img, baseScale) {
+    function addLayer(img, baseScale, sourceInfo) {
         const zone = getPrintZone();
         const bs = baseScale || Math.min(zone.w / img.width, zone.h / img.height, 1);
         const w = img.width * bs;
@@ -1441,7 +1441,10 @@
             img, original: img,
             x: zone.x + (zone.w - w) / 2,
             y: zone.y + (zone.h - h) / 2,
-            w, h, rotation: 0, baseScale: bs
+            w, h, rotation: 0, baseScale: bs,
+            sourceType: sourceInfo?.type || 'unknown',  // 'upload', 'stock', 'text'
+            sourceUrl: sourceInfo?.url || null,           // original URL or data URL
+            sourceName: sourceInfo?.name || 'design',     // filename
         };
         layers.push(layer);
         selectedIdx = layers.length - 1;
@@ -1542,7 +1545,9 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
-            img.onload = function() { addLayer(img); };
+            img.onload = function() {
+                addLayer(img, undefined, { type: 'upload', url: e.target.result, name: file.name });
+            };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
@@ -1630,7 +1635,9 @@
     function addStockImage(url) {
         const img = new Image();
         img.crossOrigin = 'anonymous';
-        img.onload = function() { addLayer(img); };
+        img.onload = function() {
+            addLayer(img, undefined, { type: 'stock', url: url, name: 'stock-art.jpg' });
+        };
         img.onerror = function() { alert('Could not load image'); };
         img.src = url;
     }
@@ -1713,8 +1720,9 @@
 
         const trimmed = trimCanvas(off);
         const img = new Image();
-        img.onload = function() { addLayer(img); };
-        img.src = trimmed.toDataURL();
+        const textDataUrl = trimmed.toDataURL();
+        img.onload = function() { addLayer(img, undefined, { type: 'text', url: textDataUrl, name: 'text-design.png' }); };
+        img.src = textDataUrl;
     }
 
     function trimCanvas(c) {
@@ -2165,30 +2173,107 @@
         return exp.toDataURL('image/jpeg', 0.8);
     }
 
+    // Upload a base64 data URL or fetch a remote image and upload it
+    async function uploadToBlob(dataOrUrl, filename, contentType) {
+        let base64Data;
+        if (dataOrUrl.startsWith('data:')) {
+            // Already a data URL — strip the prefix
+            base64Data = dataOrUrl.split(',')[1];
+        } else {
+            // Remote URL (stock art) — fetch and convert to base64
+            try {
+                const resp = await fetch(dataOrUrl);
+                const arrayBuf = await resp.arrayBuffer();
+                const bytes = new Uint8Array(arrayBuf);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                base64Data = btoa(binary);
+            } catch (e) {
+                console.error('[Configurator] Could not fetch remote image for upload:', e);
+                return dataOrUrl; // fallback: return original URL
+            }
+        }
+
+        try {
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filename: filename,
+                    contentType: contentType || 'image/png',
+                    data: base64Data,
+                }),
+            });
+            if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+            const result = await res.json();
+            console.log('[Configurator] Uploaded:', filename, '→', result.url);
+            return result.url;
+        } catch (e) {
+            console.error('[Configurator] Upload error:', e);
+            return null;
+        }
+    }
+
+    async function uploadDesignFiles() {
+        const uploads = { artFiles: [], mockupUrl: null };
+
+        // 1. Upload each art layer's original file
+        for (const layer of layers) {
+            if (layer.sourceUrl) {
+                const url = await uploadToBlob(
+                    layer.sourceUrl,
+                    layer.sourceName || `art-${layer.sourceType}.png`,
+                    layer.sourceType === 'stock' ? 'image/jpeg' : 'image/png'
+                );
+                if (url) uploads.artFiles.push({ type: layer.sourceType, url, name: layer.sourceName });
+            }
+        }
+
+        // 2. Generate and upload the mockup (shirt + design composite)
+        const mockupDataUrl = generateDesignPreview();
+        uploads.mockupUrl = await uploadToBlob(mockupDataUrl, 'mockup.jpg', 'image/jpeg');
+
+        return uploads;
+    }
+
     async function checkout() {
         const d = window._orderData;
         if (!d) return;
 
         const colorName = document.getElementById('colorName').textContent;
 
-        // Build the order payload (no large base64 to avoid message size issues)
+        // Show loading state
+        const overlay = document.getElementById('checkoutOverlay');
+        const container = document.getElementById('checkout-container');
+        const loading = document.getElementById('checkoutLoading');
+        overlay.classList.add('active');
+        container.innerHTML = '';
+        container.appendChild(loading);
+        loading.style.display = 'flex';
+        loading.textContent = 'Uploading design files...';
+
+        // Upload art files and mockup to Vercel Blob
+        let designFiles = { artFiles: [], mockupUrl: null };
+        try {
+            designFiles = await uploadDesignFiles();
+            console.log('[Configurator] Design files uploaded:', designFiles);
+        } catch (e) {
+            console.error('[Configurator] File upload failed, proceeding without:', e);
+        }
+
+        // Build the order payload with file URLs
         const payload = {
             action: 'addToCart',
             color: colorName,
-            sizes: d.order,           // e.g. { S: 2, M: 1 }
+            sizes: d.order,
             totalQty: d.totalQty,
             pricePerTee: PRICE_PER_TEE,
+            artFiles: designFiles.artFiles,
+            mockupUrl: designFiles.mockupUrl,
         };
 
         if (IN_IFRAME) {
             // ── Running inside Shopify iframe: send to parent ──
-            const overlay = document.getElementById('checkoutOverlay');
-            const container = document.getElementById('checkout-container');
-            const loading = document.getElementById('checkoutLoading');
-            overlay.classList.add('active');
-            container.innerHTML = '';
-            container.appendChild(loading);
-            loading.style.display = 'flex';
             loading.textContent = 'Adding to cart...';
 
             // Send to parent and wait for confirmation
@@ -2207,13 +2292,6 @@
             }, 10000);
         } else {
             // ── Running standalone: redirect to Shopify cart ──
-            const overlay = document.getElementById('checkoutOverlay');
-            const container = document.getElementById('checkout-container');
-            const loading = document.getElementById('checkoutLoading');
-            overlay.classList.add('active');
-            container.innerHTML = '';
-            container.appendChild(loading);
-            loading.style.display = 'flex';
             loading.textContent = 'Adding to Shopify cart...';
 
             try {

@@ -150,8 +150,11 @@
 
     console.log('[Shopify] Received addToCart:', event.data);
 
-    const { color, sizes, totalQty, designPreview } = event.data;
+    const { color, sizes, totalQty, artFiles, mockupUrl } = event.data;
     const errors = [];
+
+    console.log('[Shopify] Art files:', artFiles);
+    console.log('[Shopify] Mockup URL:', mockupUrl);
 
     try {
       // Add each size as a separate line item
@@ -173,7 +176,19 @@
           properties['Size'] = size;
         }
 
-        console.log(`[Shopify] Adding to cart: variant=${variantId}, qty=${quantity}, size=${size}`);
+        // Attach art file URLs (visible in Shopify order details)
+        if (artFiles && artFiles.length > 0) {
+          artFiles.forEach((art, i) => {
+            properties[`_Art File ${i + 1}`] = art.url;
+          });
+        }
+
+        // Attach mockup preview URL (no underscore prefix so it's visible to customer)
+        if (mockupUrl) {
+          properties['Design Preview'] = mockupUrl;
+        }
+
+        console.log(`[Shopify] Adding to cart: variant=${variantId}, qty=${quantity}, size=${size}, properties:`, properties);
 
         const res = await fetch('/cart/add.js', {
           method: 'POST',
