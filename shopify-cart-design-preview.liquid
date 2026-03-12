@@ -15,7 +15,6 @@
   ============================================================
 {% endcomment %}
 
-{% if template == 'cart' or request.page_type == 'cart' %}
 <style>
   .six13-preview-wrap {
     margin-top: 10px;
@@ -58,82 +57,78 @@
 </style>
 
 <script>
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
   function enhanceCart() {
     fetch('/cart.js')
-      .then(r => r.json())
-      .then(cart => {
-        cart.items.forEach((item, idx) => {
+      .then(function(r) { return r.json(); })
+      .then(function(cart) {
+        console.log('[Six13] Cart data:', cart.items.length, 'items');
+
+        cart.items.forEach(function(item, idx) {
           if (!item.properties) return;
 
-          const mockupUrl = item.properties['Design Preview'];
-          const artFiles = [];
+          var mockupUrl = item.properties['Design Preview'] || null;
+          var artFiles = [];
 
           // Collect art file URLs
-          Object.entries(item.properties).forEach(([key, val]) => {
-            if (key.startsWith('_Art File') && val && val.startsWith('http')) {
+          Object.keys(item.properties).forEach(function(key) {
+            var val = item.properties[key];
+            if (key.indexOf('_Art File') === 0 && val && val.indexOf('http') === 0) {
               artFiles.push({ label: key.replace('_', ''), url: val });
             }
           });
 
+          console.log('[Six13] Item', idx, '- mockup:', mockupUrl, '- art files:', artFiles.length);
+
           if (!mockupUrl && artFiles.length === 0) return;
 
           // Find the cart line item element in the DOM
-          // Most Shopify themes use data attributes or sequential cart items
-          const cartItems = document.querySelectorAll(
-            '.cart-item, .cart__item, [data-cart-item], .cart-item--product, .line-item, tr[data-line-item]'
+          // Try multiple selectors that common Shopify themes use
+          var cartItems = document.querySelectorAll(
+            'cart-item, .cart-item, .cart__item, [data-cart-item], .cart-item--product, .line-item, .cart__row, .cart-drawer__item, .cart__table-row, table.cart tbody tr, .cart__content .cart__items > *, [data-line-item], .cart-items .cart-item'
           );
-          const lineEl = cartItems[idx];
-          if (!lineEl || lineEl.dataset.six13Enhanced) return;
-          lineEl.dataset.six13Enhanced = 'true';
 
-          const wrap = document.createElement('div');
+          console.log('[Six13] Found', cartItems.length, 'cart DOM items');
+
+          var lineEl = cartItems[idx];
+          if (!lineEl) {
+            console.warn('[Six13] Could not find DOM element for cart item', idx);
+            return;
+          }
+          if (lineEl.dataset && lineEl.dataset.six13Enhanced) return;
+          if (lineEl.dataset) lineEl.dataset.six13Enhanced = 'true';
+
+          var wrap = document.createElement('div');
           wrap.className = 'six13-preview-wrap';
 
           // Mockup preview
-          if (mockupUrl && mockupUrl.startsWith('http')) {
-            wrap.innerHTML += `
-              <div class="six13-preview-label">Your Design</div>
-              <a href="${mockupUrl}" target="_blank">
-                <img src="${mockupUrl}" alt="Design Preview" loading="lazy">
-              </a>
-            `;
+          if (mockupUrl && mockupUrl.indexOf('http') === 0) {
+            wrap.innerHTML += '<div class="six13-preview-label">Your Design</div>' +
+              '<a href="' + mockupUrl + '" target="_blank">' +
+              '<img src="' + mockupUrl + '" alt="Design Preview" loading="lazy">' +
+              '</a>';
           }
 
           // Art file download links
           if (artFiles.length > 0) {
-            const linksHtml = artFiles.map(f =>
-              `<a class="six13-art-link" href="${f.url}" target="_blank" download>⬇ ${f.label}</a>`
-            ).join(' ');
-            wrap.innerHTML += `
-              <div style="margin-top:8px;">
-                <div class="six13-preview-label">Print Files</div>
-                ${linksHtml}
-              </div>
-            `;
+            var linksHtml = artFiles.map(function(f) {
+              return '<a class="six13-art-link" href="' + f.url + '" target="_blank" download>⬇ ' + f.label + '</a>';
+            }).join(' ');
+            wrap.innerHTML += '<div style="margin-top:8px;">' +
+              '<div class="six13-preview-label">Print Files</div>' +
+              linksHtml + '</div>';
           }
 
-          // Insert after the product details within the line item
-          const detailsEl = lineEl.querySelector(
-            '.cart-item__details, .cart__item-details, .cart-item__info, .product-details, td:nth-child(2)'
-          ) || lineEl;
-          detailsEl.appendChild(wrap);
+          // Append to the line item element
+          lineEl.appendChild(wrap);
         });
       })
-      .catch(err => console.error('[Six13] Cart enhance error:', err));
+      .catch(function(err) {
+        console.error('[Six13] Cart enhance error:', err);
+      });
   }
 
-  // Run on load
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(enhanceCart, 500));
-  } else {
-    setTimeout(enhanceCart, 500);
-  }
-
-  // Re-run on AJAX cart updates
-  const observer = new MutationObserver(() => setTimeout(enhanceCart, 500));
-  const target = document.querySelector('main') || document.querySelector('#MainContent') || document.body;
-  observer.observe(target, { childList: true, subtree: true });
-})();
+  // Run after a short delay to let the cart page render
+  setTimeout(enhanceCart, 800);
+});
 </script>
-{% endif %}
