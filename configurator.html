@@ -1581,6 +1581,7 @@
     const HANDLE_HIT = 16;
     const ROTATE_HANDLE_DIST = 28;
     let showBounds = false;
+    let attrLocked = true;
     let textColor = '#000000';
 
     function sel() { return selectedIdx >= 0 ? layers[selectedIdx] : null; }
@@ -1616,6 +1617,7 @@
         layers.push(layer);
         selectedIdx = layers.length - 1;
         syncSliders();
+        syncAttributes();
         render();
         updateOrderBtn();
     }
@@ -1634,6 +1636,91 @@
             document.getElementById('rotSlider').value = 0;
             document.getElementById('rotVal').textContent = '0°';
         }
+    }
+
+    function syncAttributes() {
+        const l = sel();
+        const ids = ['attrW', 'attrH', 'attrRot', 'attrScale'];
+        const wrapIds = ['attrWWrap', 'attrHWrap', 'attrRotWrap', 'attrScaleWrap'];
+        if (!l) {
+            ids.forEach(id => { const el = document.getElementById(id); if (el) { el.value = ''; el.disabled = true; } });
+            wrapIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('disabled'); });
+            return;
+        }
+        ids.forEach(id => { const el = document.getElementById(id); if (el) el.disabled = false; });
+        wrapIds.forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove('disabled'); });
+
+        const pxPerInchX = (canvas.width  * 0.32) / 14;
+        const pxPerInchY = (canvas.height * 0.40) / 16;
+        const wIn  = l.w / pxPerInchX;
+        const hIn  = l.h / pxPerInchY;
+        const scale = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
+        const rot   = ((l.rotation % 360) + 360) % 360;
+
+        const wEl = document.getElementById('attrW');     if (wEl) wEl.value = wIn.toFixed(2);
+        const hEl = document.getElementById('attrH');     if (hEl) hEl.value = hIn.toFixed(2);
+        const rEl = document.getElementById('attrRot');   if (rEl) rEl.value = rot.toFixed(1);
+        const sEl = document.getElementById('attrScale'); if (sEl) sEl.value = scale;
+    }
+
+    function toggleAttrLock() {
+        attrLocked = !attrLocked;
+        const btn = document.getElementById('attrLockBtn');
+        if (btn) btn.classList.toggle('locked', attrLocked);
+    }
+
+    function attrWidthChanged(val) {
+        const l = sel(); if (!l) return;
+        const pxPerInchX = (canvas.width  * 0.32) / 14;
+        const pxPerInchY = (canvas.height * 0.40) / 16;
+        const newW = parseFloat(val) * pxPerInchX;
+        if (!isFinite(newW) || newW < 1) return;
+        const ocx = l.x + l.w / 2, ocy = l.y + l.h / 2;
+        if (attrLocked) {
+            const ratio = l.h / l.w;
+            l.h = newW * ratio;
+            const hEl = document.getElementById('attrH');
+            if (hEl) hEl.value = (l.h / pxPerInchY).toFixed(2);
+        }
+        l.w = newW;
+        l.x = ocx - l.w / 2; l.y = ocy - l.h / 2;
+        render(); if (typeof renderLayersList === 'function') renderLayersList();
+    }
+
+    function attrHeightChanged(val) {
+        const l = sel(); if (!l) return;
+        const pxPerInchX = (canvas.width  * 0.32) / 14;
+        const pxPerInchY = (canvas.height * 0.40) / 16;
+        const newH = parseFloat(val) * pxPerInchY;
+        if (!isFinite(newH) || newH < 1) return;
+        const ocx = l.x + l.w / 2, ocy = l.y + l.h / 2;
+        if (attrLocked) {
+            const ratio = l.w / l.h;
+            l.w = newH * ratio;
+            const wEl = document.getElementById('attrW');
+            if (wEl) wEl.value = (l.w / pxPerInchX).toFixed(2);
+        }
+        l.h = newH;
+        l.x = ocx - l.w / 2; l.y = ocy - l.h / 2;
+        render(); if (typeof renderLayersList === 'function') renderLayersList();
+    }
+
+    function attrRotChanged(val) {
+        const l = sel(); if (!l) return;
+        l.rotation = parseFloat(val) || 0;
+        render();
+    }
+
+    function attrScaleChanged(val) {
+        const l = sel(); if (!l) return;
+        const pct = parseFloat(val);
+        if (!isFinite(pct) || pct < 1) return;
+        const scale = pct / 100;
+        const ocx = l.x + l.w / 2, ocy = l.y + l.h / 2;
+        l.w = l.original.width  * l.baseScale * scale;
+        l.h = l.original.height * l.baseScale * scale;
+        l.x = ocx - l.w / 2; l.y = ocy - l.h / 2;
+        render(); if (typeof renderLayersList === 'function') renderLayersList();
     }
 
     function render() {
@@ -2114,11 +2201,13 @@
         const hit = findLayerAt(mx, my);
         if (hit >= 0) {
             selectedIdx = hit; syncSliders();
+            syncAttributes();
             isDragging = true;
             dragOX = mx - layers[hit].x; dragOY = my - layers[hit].y;
             render(); return;
         }
-        selectedIdx = -1; syncSliders(); render();
+        selectedIdx = -1; syncSliders();
+        syncAttributes(); render();
     });
 
     canvas.addEventListener('mousemove', e => {
@@ -2142,7 +2231,7 @@
             l.rotation = rotateStartRotation + delta;
             document.getElementById('rotSlider').value = ((l.rotation % 360) + 360) % 360;
             document.getElementById('rotVal').textContent = Math.round(((l.rotation % 360) + 360) % 360) + '°';
-            render(); return;
+            syncAttributes(); render(); return;
         }
         if (isResizing && selectedIdx >= 0) {
             const l = sel();
@@ -2162,13 +2251,14 @@
             const pct = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
             document.getElementById('sizeSlider').value = Math.min(250, Math.max(20, pct));
             document.getElementById('sizeVal').textContent = pct + '%';
-            render(); return;
+            syncAttributes(); render(); return;
         }
         if (isDragging && selectedIdx >= 0) {
             canvas.style.cursor = 'grabbing';
             const l = sel();
             l.x = mx - dragOX; l.y = my - dragOY;
             render();
+            syncAttributes();
         }
     });
 
@@ -2203,11 +2293,13 @@
         const hit = findLayerAt(mx, my);
         if (hit >= 0) {
             selectedIdx = hit; syncSliders();
+            syncAttributes();
             isDragging = true;
             dragOX = mx - layers[hit].x; dragOY = my - layers[hit].y;
             render(); return;
         }
-        selectedIdx = -1; syncSliders(); render();
+        selectedIdx = -1; syncSliders();
+        syncAttributes(); render();
     }, { passive: false });
 
     canvas.addEventListener('touchmove', e => {
@@ -2222,7 +2314,7 @@
             l.rotation = rotateStartRotation + delta;
             document.getElementById('rotSlider').value = ((l.rotation % 360) + 360) % 360;
             document.getElementById('rotVal').textContent = Math.round(((l.rotation % 360) + 360) % 360) + '°';
-            render(); return;
+            syncAttributes(); render(); return;
         }
         if (isResizing && selectedIdx >= 0) {
             const l = sel();
@@ -2241,12 +2333,13 @@
             const pct = Math.round((l.w / (l.original.width * l.baseScale)) * 100);
             document.getElementById('sizeSlider').value = Math.min(250, Math.max(20, pct));
             document.getElementById('sizeVal').textContent = pct + '%';
-            render(); return;
+            syncAttributes(); render(); return;
         }
         if (isDragging && selectedIdx >= 0) {
             const l = sel();
             l.x = mx - dragOX; l.y = my - dragOY;
             render();
+            syncAttributes();
         }
     }, { passive: false });
 
@@ -2257,10 +2350,10 @@
         if (selectedIdx < 0) return;
         layers.splice(selectedIdx, 1);
         selectedIdx = layers.length ? Math.min(selectedIdx, layers.length - 1) : -1;
-        syncSliders(); render(); updateOrderBtn();
+        syncSliders(); syncAttributes(); render(); updateOrderBtn();
     }
 
-    function clearDesign() { layers = []; selectedIdx = -1; syncSliders(); render(); updateOrderBtn(); }
+    function clearDesign() { layers = []; selectedIdx = -1; syncSliders(); syncAttributes(); render(); updateOrderBtn(); }
 
     // Pricing
     const PRICE_PER_TEE = 12.99;
