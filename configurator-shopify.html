@@ -1429,7 +1429,7 @@
 
     function getPrintZone() {
         const cw = canvas.width, ch = canvas.height;
-        return { x: cw * 0.30, y: ch * 0.22, w: cw * 0.40, h: ch * 0.40 };
+        return { x: cw * 0.34, y: ch * 0.22, w: cw * 0.32, h: ch * 0.40 };
     }
 
     function addLayer(img, baseScale, sourceInfo) {
@@ -1536,7 +1536,7 @@
             const zoneCy = zone.y + zone.h / 2;
             const layerCx = l.x + l.w / 2;
             const layerCy = l.y + l.h / 2;
-            const threshold = 12;
+            const threshold = 25;
             const nearCx = Math.abs(layerCx - zoneCx) < threshold;
             const nearCy = Math.abs(layerCy - zoneCy) < threshold;
             if (nearCx || nearCy) {
