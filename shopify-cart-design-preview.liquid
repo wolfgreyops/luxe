@@ -77,5 +77,15 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   setTimeout(enhanceCart, 800);
+
+  // Re-run after any AJAX cart update (qty changes, etc.)
+  var debounceTimer;
+  var observer = new MutationObserver(function() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(enhanceCart, 300);
+  });
+
+  // Watch the whole body but only subtree changes — cart drawers/forms live anywhere
+  observer.observe(document.body, { childList: true, subtree: true });
 });
 </script>
