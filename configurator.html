@@ -2551,6 +2551,7 @@
         cCtx.drawImage(tshirtImg, 0, 0, cartCanvas.width, cartCanvas.height);
         const scX = cartCanvas.width / canvas.width, scY = cartCanvas.height / canvas.height;
         layers.forEach(l => {
+            if (!l.visible) return;
             const cx = (l.x + l.w / 2) * scX, cy = (l.y + l.h / 2) * scY;
             const w = l.w * scX, h = l.h * scY;
             cCtx.save();
