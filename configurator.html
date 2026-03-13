@@ -1441,7 +1441,8 @@
             img, original: img,
             x: zone.x + (zone.w - w) / 2,
             y: zone.y + (zone.h - h) / 2,
-            w, h, rotation: 0, baseScale: bs
+            w, h, rotation: 0, baseScale: bs,
+            visible: true, locked: false
         };
         layers.push(layer);
         selectedIdx = layers.length - 1;
@@ -1480,6 +1481,7 @@
         ctx.restore();
 
         layers.forEach((layer, idx) => {
+            if (!layer.visible) return;
             ctx.save();
             const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
             ctx.translate(cx, cy);
@@ -1895,7 +1897,7 @@
 
     function findLayerAt(mx, my) {
         for (let i = layers.length - 1; i >= 0; i--) {
-            if (hitTestLayer(mx, my, layers[i])) return i;
+            if (!layers[i].locked && hitTestLayer(mx, my, layers[i])) return i;
         }
         return -1;
     }
