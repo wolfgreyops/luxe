@@ -1414,7 +1414,7 @@
 
         <div class="product-info">
             <div class="product-name">5001 Staple Tee — <span id="colorName">Black</span></div>
-            <div class="product-detail">Premium 5.3oz Cotton &bull; $12.99/tee &bull; Shipping $9.99 + $1/ea</div>
+            <div class="product-detail">Premium 5.3oz Cotton &bull; $12.99/tee</div>
             <div class="size-qty-row">
                 <div class="size-qty-box"><label>S</label><input type="number" min="0" value="0" placeholder="0"></div>
                 <div class="size-qty-box"><label>M</label><input type="number" min="0" value="0" placeholder="0"></div>
@@ -2597,20 +2597,12 @@
             lineItemsEl.appendChild(line);
         });
 
-        // Shipping line
-        const shipLine = document.createElement('div');
-        shipLine.className = 'cart-line';
-        const shipDetail = totalQty === 1 ? 'Flat rate' : `$${SHIPPING_BASE.toFixed(2)} + $${SHIPPING_EXTRA.toFixed(2)} &times; ${totalQty - 1} extra`;
-        shipLine.innerHTML = `<span class="size-label">Shipping</span><span class="qty-label">${shipDetail}</span><span class="line-price">$${shipping.toFixed(2)}</span>`;
-        lineItemsEl.appendChild(shipLine);
-
         // Totals
-        const grandTotal = subtotal + shipping;
-        document.getElementById('cartTotal').textContent = `$${grandTotal.toFixed(2)}`;
-        document.getElementById('cartQtySummary').textContent = `${totalQty} tee${totalQty !== 1 ? 's' : ''} + shipping`;
+        document.getElementById('cartTotal').textContent = `$${subtotal.toFixed(2)}`;
+        document.getElementById('cartQtySummary').textContent = `${totalQty} tee${totalQty !== 1 ? 's' : ''}`;
 
         // Store order data for checkout
-        window._orderData = { order, totalQty, subtotal, grandTotal };
+        window._orderData = { order, totalQty, subtotal };
 
         // Slide sidebar out, cart in
         document.querySelector('.configurator-page').classList.add('cart-open');
