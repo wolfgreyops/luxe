@@ -1471,6 +1471,17 @@
 
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Print area bounding box
+        const zone = getPrintZone();
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([8, 5]);
+        ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
+        ctx.setLineDash([]);
+        ctx.restore();
+
         layers.forEach((layer, idx) => {
             ctx.save();
             const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
@@ -1517,6 +1528,38 @@
             }
             ctx.restore();
         });
+
+        // Center snap guides
+        if (selectedIdx >= 0) {
+            const l = layers[selectedIdx];
+            const zoneCx = zone.x + zone.w / 2;
+            const zoneCy = zone.y + zone.h / 2;
+            const layerCx = l.x + l.w / 2;
+            const layerCy = l.y + l.h / 2;
+            const threshold = 12;
+            const nearCx = Math.abs(layerCx - zoneCx) < threshold;
+            const nearCy = Math.abs(layerCy - zoneCy) < threshold;
+            if (nearCx || nearCy) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255,80,80,0.85)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 3]);
+                if (nearCx) {
+                    ctx.beginPath();
+                    ctx.moveTo(zoneCx, zone.y);
+                    ctx.lineTo(zoneCx, zone.y + zone.h);
+                    ctx.stroke();
+                }
+                if (nearCy) {
+                    ctx.beginPath();
+                    ctx.moveTo(zone.x, zoneCy);
+                    ctx.lineTo(zone.x + zone.w, zoneCy);
+                    ctx.stroke();
+                }
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
+        }
     }
 
     // Shirt swap
