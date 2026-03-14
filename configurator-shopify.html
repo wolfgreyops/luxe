@@ -1525,6 +1525,7 @@
         price: 12.99,
         unit: 'tee',
         prefix: '5001_STAPLE_TEE',
+        printZone: { x: 0.34, y: 0.24, w: 0.32, h: 0.40 },
         colors: [
           { name: 'Black', hex: '#1a1a1a' },
           { name: 'White', hex: '#f0f0f0' },
@@ -1546,6 +1547,7 @@
         price: 34.99,
         unit: 'hoodie',
         prefix: '5102_STENCIL_HOOD',
+        printZone: { x: 0.34, y: 0.32, w: 0.32, h: 0.32 },
         colors: [
           { name: 'Black', hex: '#1a1a1a' },
           { name: 'White', hex: '#f0f0f0' },
@@ -1702,7 +1704,8 @@
 
     function getPrintZone() {
         const cw = canvas.width, ch = canvas.height;
-        return { x: cw * 0.34, y: ch * 0.24, w: cw * 0.32, h: ch * 0.40 };
+        const z = GARMENTS[currentGarment].printZone;
+        return { x: cw * z.x, y: ch * z.y, w: cw * z.w, h: ch * z.h };
     }
 
     function addLayer(img, baseScale, sourceInfo) {
