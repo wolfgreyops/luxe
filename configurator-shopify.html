@@ -1758,7 +1758,6 @@
         unit: 'hoodie',
         prefix: '5102_STENCIL_HOOD',
         printZone: { x: 0.36, y: 0.38, w: 0.28, h: 0.25 },
-        stringsOverlay: { x: 0.46, y: 0.24, w: 0.08, h: 0.22 },
         colors: [
           { name: 'Black', hex: '#1a1a1a' },
           { name: 'White', hex: '#f0f0f0' },
@@ -2223,27 +2222,6 @@
 
         // Restore from clip so handles/guides draw outside zone
         ctx.restore();
-
-        // Redraw garment strings on top of artwork (hoodie only)
-        const garmentCfg = GARMENTS[currentGarment];
-        if (garmentCfg.stringsOverlay && layers.length > 0) {
-            const so = garmentCfg.stringsOverlay;
-            const wRect = wrapper.getBoundingClientRect();
-            const iRect = tshirtImg.getBoundingClientRect();
-            const sx = canvas.width / wRect.width;
-            const sy = canvas.height / wRect.height;
-            const imgX = (iRect.left - wRect.left) * sx;
-            const imgY = (iRect.top - wRect.top) * sy;
-            const imgW = iRect.width * sx;
-            const imgH = iRect.height * sy;
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(canvas.width * so.x, canvas.height * so.y, canvas.width * so.w, canvas.height * so.h);
-            ctx.clip();
-            ctx.drawImage(tshirtImg, imgX, imgY, imgW, imgH);
-            ctx.restore();
-        }
 
         // Draw selection handles (outside clip)
         layers.forEach((layer, idx) => {
@@ -3073,17 +3051,6 @@
             eCtx.restore();
         });
         eCtx.restore();
-
-        // Strings overlay
-        if (g.stringsOverlay) {
-            const so = g.stringsOverlay;
-            eCtx.save();
-            eCtx.beginPath();
-            eCtx.rect(expW * so.x, expH * so.y, expW * so.w, expH * so.h);
-            eCtx.clip();
-            eCtx.drawImage(tshirtImg, 0, 0, expW, expH);
-            eCtx.restore();
-        }
     }
 
     function generateDesignPreview() {
