@@ -965,7 +965,40 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
+        }
+        .qty-stepper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+        .qty-btn {
+            width: 42px;
+            height: 16px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: var(--grey);
+            padding: 0;
+            line-height: 1;
+            transition: background 0.15s, color 0.15s;
+        }
+        .qty-btn:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+        .qty-btn.qty-up {
+            border-radius: 4px 4px 0 0;
+            border-bottom: none;
+        }
+        .qty-btn.qty-down {
+            border-radius: 0 0 4px 4px;
+            border-top: none;
         }
         .size-qty-box label {
             font-family: 'Geist', sans-serif;
@@ -977,10 +1010,10 @@
         }
         .size-qty-box input {
             width: 42px;
-            height: 34px;
+            height: 30px;
             text-align: center;
             border: 1px solid var(--border);
-            border-radius: 4px;
+            border-radius: 0;
             background: var(--white);
             font-family: 'Geist', sans-serif;
             font-size: 0.8rem;
@@ -1573,11 +1606,11 @@
             <div class="product-name" id="productName">5001 Staple Tee — <span id="colorName">Black</span></div>
             <div class="product-detail" id="productDetail">Premium 5.3oz Cotton &bull; $12.99/tee</div>
             <div class="size-qty-row">
-                <div class="size-qty-box"><label>S</label><input type="number" min="0" value="0" placeholder="0"></div>
-                <div class="size-qty-box"><label>M</label><input type="number" min="0" value="0" placeholder="0"></div>
-                <div class="size-qty-box"><label>L</label><input type="number" min="0" value="0" placeholder="0"></div>
-                <div class="size-qty-box"><label>XL</label><input type="number" min="0" value="0" placeholder="0"></div>
-                <div class="size-qty-box"><label>2XL</label><input type="number" min="0" value="0" placeholder="0"></div>
+                <div class="size-qty-box"><label>S</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>
+                <div class="size-qty-box"><label>M</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>
+                <div class="size-qty-box"><label>L</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>
+                <div class="size-qty-box"><label>XL</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>
+                <div class="size-qty-box"><label>2XL</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>
             </div>
         </div>
     </div>
@@ -1867,6 +1900,13 @@
                 uploadBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload Artwork';
             }
         }
+    }
+
+    function stepQty(btn, delta) {
+        const input = btn.parentElement.querySelector('input');
+        const val = Math.max(0, (parseInt(input.value) || 0) + delta);
+        input.value = val;
+        updateOrderBtn();
     }
 
     // Listen to qty changes + init garment
