@@ -632,6 +632,139 @@
             font-size: 0.85rem;
         }
 
+        /* Cart Added Modal */
+        .cart-added-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 250;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .cart-added-modal.active { display: flex; }
+        .cart-added-content {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 36px 32px;
+            width: 380px;
+            max-width: 90vw;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .cart-added-content h3 {
+            font-size: 1rem;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .cart-added-content p {
+            font-size: 0.78rem;
+            color: var(--grey);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .btn-add-another {
+            width: 100%;
+            padding: 12px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .btn-add-another:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-checkout-now {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            border: none;
+            color: var(--white);
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            border-radius: 6px;
+        }
+        .btn-checkout-now:hover { background: var(--accent-dark); }
+
+        /* Multi-item cart styles */
+        .cart-items {
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+        }
+        .cart-items::-webkit-scrollbar { width: 4px; }
+        .cart-items::-webkit-scrollbar-track { background: transparent; }
+        .cart-items::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+        .cart-item {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .cart-item:last-child { border-bottom: none; }
+        .cart-item-preview {
+            width: 72px;
+            height: 72px;
+            border-radius: 6px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--white);
+            border: 1px solid var(--border);
+        }
+        .cart-item-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .cart-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .cart-item-name {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text);
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .cart-item-sizes {
+            font-size: 0.68rem;
+            color: var(--grey);
+            margin-bottom: 4px;
+        }
+        .cart-item-subtotal {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .cart-item-remove {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--grey);
+            cursor: pointer;
+            padding: 2px 6px;
+            transition: color 0.2s;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .cart-item-remove:hover { color: #e74c3c; }
+
         /* Stock Art */
         .stock-search { display: flex; gap: 6px; margin-bottom: 8px; }
         .stock-search input {
@@ -1429,7 +1562,7 @@
         </div>
 
         <!-- Sticky Order Now -->
-        <button class="sticky-order-btn disabled" id="stickyOrderBtn" onclick="orderNow()" disabled>Order Now</button>
+        <button class="sticky-order-btn disabled" id="stickyOrderBtn" onclick="addToCart()" disabled>Add to Cart</button>
 
         <div class="canvas-wrapper" id="canvasWrapper">
             <img class="tshirt-img" id="tshirtImg" src="tees/5001_STAPLE_TEE_BLACK.jpg" alt="T-Shirt">
@@ -1456,21 +1589,16 @@
     </button>
 
     <!-- Mobile Order Button -->
-    <button class="mobile-order-btn disabled" id="mobileOrderBtn" onclick="orderNow()">Order Now</button>
+    <button class="mobile-order-btn disabled" id="mobileOrderBtn" onclick="addToCart()">Add to Cart</button>
 
     <!-- CART PANEL (slides in from right) -->
     <div class="cart-panel" id="cartPanel">
         <div class="cart-header">
-            <h3>Your Order</h3>
+            <h3>Your Cart</h3>
             <button class="cart-close" onclick="closeCart()">&times;</button>
         </div>
         <div class="cart-body">
-            <div class="cart-preview">
-                <canvas id="cartPreviewCanvas"></canvas>
-            </div>
-            <div class="cart-product-name" id="cartProductName"></div>
-            <div class="cart-product-detail" id="cartProductDetail"></div>
-            <div class="cart-line-items" id="cartLineItems"></div>
+            <div class="cart-items" id="cartItems"></div>
             <div class="cart-divider"></div>
             <div class="cart-total-row">
                 <span class="total-label">Total</span>
@@ -1482,6 +1610,16 @@
             <button class="btn-checkout" onclick="checkout()">Checkout</button>
             <button class="btn-back-edit" onclick="closeCart()">Back to Editor</button>
         </div>
+    </div>
+</div>
+
+<!-- Cart Added Modal -->
+<div class="cart-added-modal" id="cartAddedModal">
+    <div class="cart-added-content">
+        <h3>Added to Cart</h3>
+        <p id="cartAddedSummary"></p>
+        <button class="btn-add-another" onclick="addAnother()">+ Add Another Garment</button>
+        <button class="btn-checkout-now" id="cartAddedCheckoutBtn" onclick="openCart()">Checkout</button>
     </div>
 </div>
 
@@ -1623,21 +1761,27 @@
         sizeInputs.forEach(inp => { totalQty += (parseInt(inp.value) || 0); });
         const ready = hasArt && totalQty > 0;
 
+        const cartBadge = cart.length > 0 ? ` (${cart.length})` : '';
+        const btnLabel = 'Add to Cart' + cartBadge;
+
         // Mobile button
         const mobileBtn = document.getElementById('mobileOrderBtn');
         if (mobileBtn) {
+            mobileBtn.textContent = btnLabel;
             if (ready) { mobileBtn.classList.remove('disabled'); mobileBtn.removeAttribute('disabled'); }
             else { mobileBtn.classList.add('disabled'); mobileBtn.setAttribute('disabled', 'true'); }
         }
         // Desktop button (legacy sidebar — may not exist now)
         const desktopBtn = document.querySelector('.btn-export');
         if (desktopBtn) {
+            desktopBtn.textContent = btnLabel;
             if (ready) { desktopBtn.classList.remove('disabled'); desktopBtn.removeAttribute('disabled'); }
             else { desktopBtn.classList.add('disabled'); desktopBtn.setAttribute('disabled', 'true'); }
         }
-        // Sticky Order Now button on preview panel
+        // Sticky button on preview panel
         const stickyBtn = document.getElementById('stickyOrderBtn');
         if (stickyBtn) {
+            stickyBtn.textContent = btnLabel;
             if (ready) { stickyBtn.classList.remove('disabled'); stickyBtn.removeAttribute('disabled'); }
             else { stickyBtn.classList.add('disabled'); stickyBtn.setAttribute('disabled', 'true'); }
         }
@@ -1671,6 +1815,7 @@
     const tshirtImg = document.getElementById('tshirtImg');
 
     let layers = [];
+    let cart = [];  // Array of saved cart items
     let selectedIdx = -1;
     let isDragging = false;
     let isResizing = false;
@@ -2665,7 +2810,7 @@
         return SHIPPING_BASE + Math.max(0, qty - 1) * SHIPPING_EXTRA;
     }
 
-    function orderNow() {
+    function addToCart() {
         // Require artwork
         if (layers.length === 0) {
             alert('Artwork is required. Please upload an image, add text, or choose stock art before ordering.');
@@ -2686,58 +2831,99 @@
             return;
         }
 
-        // Generate preview image on cart canvas
-        const cartCanvas = document.getElementById('cartPreviewCanvas');
-        const cCtx = cartCanvas.getContext('2d');
-        const previewSize = 600;
-        cartCanvas.width = previewSize;
-        cartCanvas.height = Math.round(previewSize * (canvas.height / canvas.width));
-        cartCanvas.style.width = '100%';
-        cartCanvas.style.display = 'block';
-        cCtx.drawImage(tshirtImg, 0, 0, cartCanvas.width, cartCanvas.height);
-        const scX = cartCanvas.width / canvas.width, scY = cartCanvas.height / canvas.height;
-        layers.forEach(l => {
-            if (!l.visible) return;
-            const cx = (l.x + l.w / 2) * scX, cy = (l.y + l.h / 2) * scY;
-            const w = l.w * scX, h = l.h * scY;
-            cCtx.save();
-            cCtx.translate(cx, cy);
-            cCtx.rotate((l.rotation * Math.PI) / 180);
-            cCtx.drawImage(l.img, -w / 2, -h / 2, w, h);
-            cCtx.restore();
-        });
-
-        // Populate cart info
         const colorName = document.getElementById('colorName').textContent;
         const garment = GARMENTS[currentGarment];
-        document.getElementById('cartProductName').textContent = `${garment.name} — ${colorName}`;
-        document.getElementById('cartProductDetail').textContent = `$${garment.price.toFixed(2)} per ${garment.unit}`;
+        const subtotal = totalQty * garment.price;
 
-        // Build line items
-        const lineItemsEl = document.getElementById('cartLineItems');
-        lineItemsEl.innerHTML = '';
+        // Snapshot current state into a cart item
+        const item = {
+            garment: currentGarment,
+            garmentName: garment.name,
+            color: colorName,
+            unit: garment.unit,
+            price: garment.price,
+            sizes: { ...order },
+            totalQty: totalQty,
+            subtotal: subtotal,
+            layers: layers.map(l => ({ ...l })),
+            mockupDataUrl: generateDesignPreview()
+        };
 
-        const subtotal = totalQty * PRICE_PER_TEE;
-        const shipping = calcShipping(totalQty);
+        cart.push(item);
 
-        Object.entries(order).forEach(([size, qty]) => {
-            const lineTotal = (qty * PRICE_PER_TEE).toFixed(2);
-            const line = document.createElement('div');
-            line.className = 'cart-line';
-            line.innerHTML = `<span class="size-label">${size}</span><span class="qty-label">&times; ${qty} @ $${PRICE_PER_TEE.toFixed(2)}</span><span class="line-price">$${lineTotal}</span>`;
-            lineItemsEl.appendChild(line);
+        // Show confirmation modal
+        const modal = document.getElementById('cartAddedModal');
+        document.getElementById('cartAddedSummary').textContent =
+            `${garment.name} — ${colorName} \u00d7 ${totalQty}`;
+        const checkoutBtn = document.getElementById('cartAddedCheckoutBtn');
+        checkoutBtn.textContent = `Checkout (${cart.length} ${cart.length === 1 ? 'item' : 'items'})`;
+        modal.classList.add('active');
+
+        updateOrderBtn();
+    }
+
+    function addAnother() {
+        document.getElementById('cartAddedModal').classList.remove('active');
+        resetConfigurator();
+    }
+
+    function resetConfigurator() {
+        layers = [];
+        selectedIdx = -1;
+        syncSliders();
+        syncAttributes();
+        render();
+        renderLayersList();
+        // Reset size qty inputs to 0
+        document.querySelectorAll('.size-qty-box input').forEach(inp => { inp.value = 0; });
+        updateOrderBtn();
+    }
+
+    function openCart() {
+        document.getElementById('cartAddedModal').classList.remove('active');
+        renderCart();
+        document.querySelector('.configurator-page').classList.add('cart-open');
+    }
+
+    function renderCart() {
+        const container = document.getElementById('cartItems');
+        container.innerHTML = '';
+
+        let grandTotal = 0;
+        let grandQty = 0;
+
+        cart.forEach((item, idx) => {
+            grandTotal += item.subtotal;
+            grandQty += item.totalQty;
+
+            const sizeStr = Object.entries(item.sizes).map(([s, q]) => `${s} \u00d7${q}`).join(', ');
+
+            const div = document.createElement('div');
+            div.className = 'cart-item';
+            div.innerHTML = `
+                <div class="cart-item-preview"><img src="${item.mockupDataUrl}" alt="Preview"></div>
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.garmentName} — ${item.color}</div>
+                    <div class="cart-item-sizes">${sizeStr}</div>
+                    <div class="cart-item-subtotal">$${item.subtotal.toFixed(2)}</div>
+                </div>
+                <button class="cart-item-remove" onclick="removeCartItem(${idx})">&times;</button>
+            `;
+            container.appendChild(div);
         });
 
-        // Totals
-        document.getElementById('cartTotal').textContent = `$${subtotal.toFixed(2)}`;
-        const unitLabel = GARMENTS[currentGarment].unit;
-        document.getElementById('cartQtySummary').textContent = `${totalQty} ${unitLabel}${totalQty !== 1 ? 's' : ''}`;
+        document.getElementById('cartTotal').textContent = `$${grandTotal.toFixed(2)}`;
+        document.getElementById('cartQtySummary').textContent = `${grandQty} item${grandQty !== 1 ? 's' : ''}`;
+    }
 
-        // Store order data for checkout
-        window._orderData = { order, totalQty, subtotal };
-
-        // Slide sidebar out, cart in
-        document.querySelector('.configurator-page').classList.add('cart-open');
+    function removeCartItem(idx) {
+        cart.splice(idx, 1);
+        if (cart.length === 0) {
+            closeCart();
+        } else {
+            renderCart();
+        }
+        updateOrderBtn();
     }
 
     function closeCart() {
@@ -2861,10 +3047,7 @@
     }
 
     async function checkout() {
-        const d = window._orderData;
-        if (!d) return;
-
-        const colorName = document.getElementById('colorName').textContent;
+        if (cart.length === 0) return;
 
         // Show loading state
         const overlay = document.getElementById('checkoutOverlay');
@@ -2876,36 +3059,53 @@
         loading.style.display = 'flex';
         loading.textContent = 'Uploading design files...';
 
-        // Upload art files and mockup to Vercel Blob
-        let designFiles = { artFiles: [], mockupUrl: null };
-        try {
-            designFiles = await uploadDesignFiles();
-            console.log('[Configurator] Design files uploaded:', designFiles);
-        } catch (e) {
-            console.error('[Configurator] File upload failed, proceeding without:', e);
+        // Upload design files for each cart item
+        const allDesignFiles = [];
+        for (let ci = 0; ci < cart.length; ci++) {
+            const item = cart[ci];
+            loading.textContent = `Uploading designs (${ci + 1}/${cart.length})...`;
+
+            // Temporarily swap layers so uploadDesignFiles works with this item's layers
+            const savedLayers = layers;
+            const savedGarment = currentGarment;
+            layers = item.layers;
+            currentGarment = item.garment;
+
+            let designFiles = { artFiles: [], mockupUrl: null };
+            try {
+                designFiles = await uploadDesignFiles();
+                console.log(`[Configurator] Cart item ${ci} files uploaded:`, designFiles);
+            } catch (e) {
+                console.error(`[Configurator] Cart item ${ci} upload failed:`, e);
+            }
+
+            // Restore original state
+            layers = savedLayers;
+            currentGarment = savedGarment;
+
+            allDesignFiles.push({ item, designFiles });
         }
 
-        // Build the order payload with file URLs
-        const payload = {
-            action: 'addToCart',
-            color: colorName,
-            sizes: d.order,
-            totalQty: d.totalQty,
-            garment: GARMENTS[currentGarment].name,
-            pricePerTee: GARMENTS[currentGarment].price,
-            artFiles: designFiles.artFiles,
-            mockupUrl: designFiles.mockupUrl,
-        };
-
         if (IN_IFRAME) {
-            // ── Running inside Shopify iframe: send to parent ──
+            // ── Running inside Shopify iframe: send all items to parent ──
             loading.textContent = 'Adding to cart...';
 
-            // Send to parent and wait for confirmation
+            const payload = {
+                action: 'addToCart',
+                items: allDesignFiles.map(({ item, designFiles }) => ({
+                    color: item.color,
+                    sizes: item.sizes,
+                    totalQty: item.totalQty,
+                    garment: item.garmentName,
+                    pricePerTee: item.price,
+                    artFiles: designFiles.artFiles,
+                    mockupUrl: designFiles.mockupUrl,
+                })),
+            };
+
             console.log('[Configurator] Sending addToCart to parent:', payload);
             window.parent.postMessage(payload, '*');
 
-            // Timeout fallback — if parent doesn't respond in 10s, show error
             setTimeout(() => {
                 if (loading.style.display === 'flex') {
                     container.innerHTML = `<div class="checkout-error">
@@ -2920,48 +3120,46 @@
             loading.textContent = 'Adding to Shopify cart...';
 
             try {
-                // Try AJAX cart add (works if on same domain or CORS configured)
-                const items = Object.entries(d.order).map(([size, quantity]) => ({
-                    quantity,
-                    id: SHOPIFY_VARIANT_ID,
-                    properties: {
-                        'Shirt Color': colorName,
-                        'Size': size,
-                        '_design_note': 'Custom design — see order notes',
-                    }
-                }));
-
-                // If no variant ID set, build a permalink redirect
                 if (!SHOPIFY_VARIANT_ID) {
-                    // Fallback: Open Shopify store with order details in URL hash
-                    const orderSummary = Object.entries(d.order).map(([s, q]) => `${s}x${q}`).join(',');
-                    const url = `${SHOPIFY_STORE}/cart?note=Custom+Tee+Order:+${colorName}+${orderSummary}`;
+                    // Fallback: show summary with link
+                    const summaryParts = cart.map(item => {
+                        const sizeStr = Object.entries(item.sizes).map(([s,q]) => `${s}\u00d7${q}`).join(',');
+                        return `${item.garmentName}+${item.color}+${sizeStr}`;
+                    });
+                    const url = `${SHOPIFY_STORE}/cart?note=Custom+Order:+${summaryParts.join(';')}`;
+                    const detailHtml = cart.map(item =>
+                        `<p style="margin-top:8px;font-size:0.75rem;color:var(--grey)">${item.garmentName} — ${item.color} &bull; ${Object.entries(item.sizes).map(([s,q]) => s + ' \u00d7 ' + q).join(', ')}</p>`
+                    ).join('');
                     container.innerHTML = `<div class="order-confirmed">
                         <h2>Almost There!</h2>
-                        <p>Your design is ready. Click below to complete your order on the Six Thirteen store.</p>
-                        <p style="margin-top:8px;font-size:0.75rem;color:var(--grey)">Color: ${colorName} &bull; ${Object.entries(d.order).map(([s,q]) => s + ' × ' + q).join(', ')}</p>
-                        <a href="${url}" target="_blank" class="btn-checkout" style="margin-top:24px;max-width:280px;display:inline-block;text-decoration:none;text-align:center">Go to Shopify Checkout →</a>
+                        <p>Your designs are ready. Click below to complete your order on the Six Thirteen store.</p>
+                        ${detailHtml}
+                        <a href="${url}" target="_blank" class="btn-checkout" style="margin-top:24px;max-width:280px;display:inline-block;text-decoration:none;text-align:center">Go to Shopify Checkout \u2192</a>
                     </div>`;
                     return;
                 }
 
-                // Add each size as a separate line item
-                for (const [size, quantity] of Object.entries(d.order)) {
-                    await fetch(`${SHOPIFY_STORE}/cart/add.js`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id: SHOPIFY_VARIANT_ID,
-                            quantity: quantity,
-                            properties: {
-                                'Shirt Color': colorName,
-                                'Size': size,
-                            }
-                        }),
-                    });
+                // Add each item's sizes as separate line items
+                for (const item of cart) {
+                    for (const [size, quantity] of Object.entries(item.sizes)) {
+                        await fetch(`${SHOPIFY_STORE}/cart/add.js`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                id: SHOPIFY_VARIANT_ID,
+                                quantity: quantity,
+                                properties: {
+                                    'Garment': item.garmentName,
+                                    'Shirt Color': item.color,
+                                    'Size': size,
+                                }
+                            }),
+                        });
+                    }
                 }
 
-                // Redirect to Shopify checkout
+                // Clear cart and redirect
+                cart = [];
                 window.location.href = `${SHOPIFY_STORE}/cart`;
 
             } catch (err) {
@@ -2987,9 +3185,11 @@
         if (!e.data || e.data.action !== 'cartAdded') return;
         const container = document.getElementById('checkout-container');
         if (e.data.success) {
+            cart = [];  // Clear local cart after successful Shopify add
+            updateOrderBtn();
             container.innerHTML = `<div class="order-confirmed">
                 <h2>Added to Cart!</h2>
-                <p>Your custom tee is in your cart.</p>
+                <p>Your custom items are in your cart.</p>
                 <div style="display:flex;flex-direction:column;gap:8px;margin-top:24px;align-items:center">
                     <a href="${SHOPIFY_STORE}/cart" target="_top" class="btn-checkout" style="max-width:260px;display:block;text-decoration:none;text-align:center">View Cart &rarr;</a>
                     <button class="btn-back-edit" style="max-width:260px" onclick="closeCheckoutModal()">Keep Designing</button>
