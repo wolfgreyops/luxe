@@ -2204,6 +2204,12 @@
         ctx.setLineDash([]);
         ctx.restore();
 
+        // Clip artwork to print zone
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(zone.x, zone.y, zone.w, zone.h);
+        ctx.clip();
+
         layers.forEach((layer, idx) => {
             if (!layer.visible) return;
             ctx.save();
@@ -2211,6 +2217,19 @@
             ctx.translate(cx, cy);
             ctx.rotate((layer.rotation * Math.PI) / 180);
             ctx.drawImage(layer.img, -layer.w / 2, -layer.h / 2, layer.w, layer.h);
+            ctx.restore();
+        });
+
+        // Restore from clip so handles/guides draw outside zone
+        ctx.restore();
+
+        // Draw selection handles (outside clip)
+        layers.forEach((layer, idx) => {
+            if (!layer.visible) return;
+            ctx.save();
+            const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
+            ctx.translate(cx, cy);
+            ctx.rotate((layer.rotation * Math.PI) / 180);
 
             if (showBounds && idx === selectedIdx) {
                 ctx.strokeStyle = 'rgba(122,53,248,0.6)';
