@@ -2899,7 +2899,7 @@
             grandTotal += item.subtotal;
             grandQty += item.totalQty;
 
-            const sizeStr = Object.entries(item.sizes).map(([s, q]) => `${s} \u00d7${q}`).join(', ');
+            const sizeStr = Object.entries(item.sizes || {}).map(([s, q]) => `${s} \u00d7${q}`).join(', ');
 
             const div = document.createElement('div');
             div.className = 'cart-item';
@@ -3082,12 +3082,13 @@
         }
 
         if (IN_IFRAME) {
-            // ── Running inside Shopify iframe: send all items to parent ──
+            // ── Running inside Shopify iframe: send each item to parent in old flat format ──
             loading.textContent = 'Adding to cart...';
 
-            const payload = {
-                action: 'addToCart',
-                items: allDesignFiles.map(({ item, designFiles }) => ({
+            let itemsSent = 0;
+            for (const { item, designFiles } of allDesignFiles) {
+                const payload = {
+                    action: 'addToCart',
                     color: item.color,
                     sizes: item.sizes,
                     totalQty: item.totalQty,
@@ -3095,11 +3096,17 @@
                     pricePerTee: item.price,
                     artFiles: designFiles.artFiles,
                     mockupUrl: designFiles.mockupUrl,
-                })),
-            };
+                };
 
-            console.log('[Configurator] Sending addToCart to parent:', payload);
-            window.parent.postMessage(payload, '*');
+                console.log(`[Configurator] Sending addToCart to parent (${itemsSent + 1}/${allDesignFiles.length}):`, payload);
+                window.parent.postMessage(payload, '*');
+                itemsSent++;
+
+                // Small delay between items so parent can process each one
+                if (itemsSent < allDesignFiles.length) {
+                    await new Promise(r => setTimeout(r, 500));
+                }
+            }
 
             setTimeout(() => {
                 if (loading.style.display === 'flex') {
