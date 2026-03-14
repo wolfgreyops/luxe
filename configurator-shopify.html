@@ -1758,11 +1758,6 @@
         unit: 'hoodie',
         prefix: '5102_STENCIL_HOOD',
         printZone: { x: 0.36, y: 0.38, w: 0.28, h: 0.25 },
-        stringsOverlay: [
-          // Each string: centerline points [x,y] from top to bottom, plus width
-          { path: [[0.489, 0.26], [0.485, 0.34], [0.482, 0.40], [0.480, 0.46]], w: 0.014 },
-          { path: [[0.501, 0.26], [0.503, 0.34], [0.506, 0.40], [0.508, 0.46]], w: 0.014 },
-        ],
         colors: [
           { name: 'Black', hex: '#1a1a1a' },
           { name: 'White', hex: '#f0f0f0' },
@@ -2227,41 +2222,6 @@
 
         // Restore from clip so handles/guides draw outside zone
         ctx.restore();
-
-        // Redraw garment strings on top of artwork (hoodie only)
-        const garmentCfg = GARMENTS[currentGarment];
-        if (garmentCfg.stringsOverlay && layers.length > 0) {
-            const wRect = wrapper.getBoundingClientRect();
-            const iRect = tshirtImg.getBoundingClientRect();
-            const sx = canvas.width / wRect.width;
-            const sy = canvas.height / wRect.height;
-            const imgX = (iRect.left - wRect.left) * sx;
-            const imgY = (iRect.top - wRect.top) * sy;
-            const imgW = iRect.width * sx;
-            const imgH = iRect.height * sy;
-
-            garmentCfg.stringsOverlay.forEach(s => {
-                const hw = s.w / 2;
-                ctx.save();
-                ctx.beginPath();
-                // Left edge top→bottom
-                for (let i = 0; i < s.path.length; i++) {
-                    const x = canvas.width * (s.path[i][0] - hw);
-                    const y = canvas.height * s.path[i][1];
-                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-                }
-                // Right edge bottom→top
-                for (let i = s.path.length - 1; i >= 0; i--) {
-                    const x = canvas.width * (s.path[i][0] + hw);
-                    const y = canvas.height * s.path[i][1];
-                    ctx.lineTo(x, y);
-                }
-                ctx.closePath();
-                ctx.clip();
-                ctx.drawImage(tshirtImg, imgX, imgY, imgW, imgH);
-                ctx.restore();
-            });
-        }
 
         // Draw selection handles (outside clip)
         layers.forEach((layer, idx) => {
@@ -3092,28 +3052,6 @@
         });
         eCtx.restore();
 
-        // Strings overlay for export
-        if (g.stringsOverlay) {
-            g.stringsOverlay.forEach(s => {
-                const hw = s.w / 2;
-                eCtx.save();
-                eCtx.beginPath();
-                for (let i = 0; i < s.path.length; i++) {
-                    const x = expW * (s.path[i][0] - hw);
-                    const y = expH * s.path[i][1];
-                    if (i === 0) eCtx.moveTo(x, y); else eCtx.lineTo(x, y);
-                }
-                for (let i = s.path.length - 1; i >= 0; i--) {
-                    const x = expW * (s.path[i][0] + hw);
-                    const y = expH * s.path[i][1];
-                    eCtx.lineTo(x, y);
-                }
-                eCtx.closePath();
-                eCtx.clip();
-                eCtx.drawImage(tshirtImg, 0, 0, expW, expH);
-                eCtx.restore();
-            });
-        }
     }
 
     function generateDesignPreview() {
