@@ -2876,6 +2876,9 @@
         renderLayersList();
         // Reset size qty inputs to 0
         document.querySelectorAll('.size-qty-box input').forEach(inp => { inp.value = 0; });
+        // Clear file input so re-selecting the same file triggers change event
+        const fi = document.getElementById('fileInput');
+        if (fi) fi.value = '';
         updateOrderBtn();
     }
 
@@ -3007,13 +3010,14 @@
         }
     }
 
-    async function uploadDesignFiles() {
+    async function uploadDesignFiles(itemLayers, mockupDataUrl) {
+        const srcLayers = itemLayers || layers;
         const uploads = { artFiles: [], mockupUrl: null };
-        console.log('[Configurator] Starting upload for', layers.length, 'layers');
+        console.log('[Configurator] Starting upload for', srcLayers.length, 'layers');
 
         // 1. Upload each art layer's current state (includes bg removal, etc.)
-        for (let i = 0; i < layers.length; i++) {
-            const layer = layers[i];
+        for (let i = 0; i < srcLayers.length; i++) {
+            const layer = srcLayers[i];
             console.log(`[Configurator] Layer ${i}: type=${layer.sourceType}, name=${layer.sourceName}, hasSourceUrl=${!!layer.sourceUrl}`);
             const dataUrl = exportLayerAsDataUrl(layer);
             const name = layer.sourceName || `art-layer-${i + 1}.png`;
@@ -3033,13 +3037,13 @@
             }
         }
 
-        // 2. Generate and upload the mockup (shirt + design composite)
+        // 2. Upload the mockup (use provided data URL or generate fresh)
         try {
-            const mockupDataUrl = generateDesignPreview();
-            console.log('[Configurator] Mockup generated:', mockupDataUrl ? mockupDataUrl.length + ' chars' : 'null');
-            uploads.mockupUrl = await uploadToBlob(mockupDataUrl, 'mockup.jpg', 'image/jpeg');
+            const mDataUrl = mockupDataUrl || generateDesignPreview();
+            console.log('[Configurator] Mockup:', mDataUrl ? mDataUrl.length + ' chars' : 'null');
+            uploads.mockupUrl = await uploadToBlob(mDataUrl, 'mockup.jpg', 'image/jpeg');
         } catch (e) {
-            console.error('[Configurator] Mockup generation failed (tainted canvas?):', e.message);
+            console.error('[Configurator] Mockup upload failed:', e.message);
         }
 
         console.log('[Configurator] Upload results:', uploads.artFiles.length, 'art files, mockup:', !!uploads.mockupUrl);
@@ -3065,23 +3069,14 @@
             const item = cart[ci];
             loading.textContent = `Uploading designs (${ci + 1}/${cart.length})...`;
 
-            // Temporarily swap layers so uploadDesignFiles works with this item's layers
-            const savedLayers = layers;
-            const savedGarment = currentGarment;
-            layers = item.layers;
-            currentGarment = item.garment;
-
             let designFiles = { artFiles: [], mockupUrl: null };
             try {
-                designFiles = await uploadDesignFiles();
+                // Pass item's layers and pre-generated mockup directly (no global swap)
+                designFiles = await uploadDesignFiles(item.layers, item.mockupDataUrl);
                 console.log(`[Configurator] Cart item ${ci} files uploaded:`, designFiles);
             } catch (e) {
                 console.error(`[Configurator] Cart item ${ci} upload failed:`, e);
             }
-
-            // Restore original state
-            layers = savedLayers;
-            currentGarment = savedGarment;
 
             allDesignFiles.push({ item, designFiles });
         }
@@ -3123,12 +3118,12 @@
                 if (!SHOPIFY_VARIANT_ID) {
                     // Fallback: show summary with link
                     const summaryParts = cart.map(item => {
-                        const sizeStr = Object.entries(item.sizes).map(([s,q]) => `${s}\u00d7${q}`).join(',');
+                        const sizeStr = Object.entries(item.sizes || {}).map(([s,q]) => `${s}\u00d7${q}`).join(',');
                         return `${item.garmentName}+${item.color}+${sizeStr}`;
                     });
                     const url = `${SHOPIFY_STORE}/cart?note=Custom+Order:+${summaryParts.join(';')}`;
                     const detailHtml = cart.map(item =>
-                        `<p style="margin-top:8px;font-size:0.75rem;color:var(--grey)">${item.garmentName} — ${item.color} &bull; ${Object.entries(item.sizes).map(([s,q]) => s + ' \u00d7 ' + q).join(', ')}</p>`
+                        `<p style="margin-top:8px;font-size:0.75rem;color:var(--grey)">${item.garmentName} — ${item.color} &bull; ${Object.entries(item.sizes || {}).map(([s,q]) => s + ' \u00d7 ' + q).join(', ')}</p>`
                     ).join('');
                     container.innerHTML = `<div class="order-confirmed">
                         <h2>Almost There!</h2>
@@ -3141,7 +3136,7 @@
 
                 // Add each item's sizes as separate line items
                 for (const item of cart) {
-                    for (const [size, quantity] of Object.entries(item.sizes)) {
+                    for (const [size, quantity] of Object.entries(item.sizes || {})) {
                         await fetch(`${SHOPIFY_STORE}/cart/add.js`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
