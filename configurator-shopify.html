@@ -1758,6 +1758,7 @@
         unit: 'hoodie',
         prefix: '5102_STENCIL_HOOD',
         printZone: { x: 0.36, y: 0.38, w: 0.28, h: 0.25 },
+        stringsOverlay: { x: 0.46, y: 0.24, w: 0.08, h: 0.22 },
         colors: [
           { name: 'Black', hex: '#1a1a1a' },
           { name: 'White', hex: '#f0f0f0' },
@@ -2222,6 +2223,27 @@
 
         // Restore from clip so handles/guides draw outside zone
         ctx.restore();
+
+        // Redraw garment strings on top of artwork (hoodie only)
+        const garmentCfg = GARMENTS[currentGarment];
+        if (garmentCfg.stringsOverlay && layers.length > 0) {
+            const so = garmentCfg.stringsOverlay;
+            const wRect = wrapper.getBoundingClientRect();
+            const iRect = tshirtImg.getBoundingClientRect();
+            const sx = canvas.width / wRect.width;
+            const sy = canvas.height / wRect.height;
+            const imgX = (iRect.left - wRect.left) * sx;
+            const imgY = (iRect.top - wRect.top) * sy;
+            const imgW = iRect.width * sx;
+            const imgH = iRect.height * sy;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(canvas.width * so.x, canvas.height * so.y, canvas.width * so.w, canvas.height * so.h);
+            ctx.clip();
+            ctx.drawImage(tshirtImg, imgX, imgY, imgW, imgH);
+            ctx.restore();
+        }
 
         // Draw selection handles (outside clip)
         layers.forEach((layer, idx) => {
@@ -3028,14 +3050,20 @@
     // Shopify Cart Integration
     // ==============================
 
-    function generateDesignPreview() {
-        // Generate a composite preview image (shirt + design)
-        const exp = document.createElement('canvas');
-        exp.width = 800; exp.height = 870;
-        const eCtx = exp.getContext('2d');
-        eCtx.drawImage(tshirtImg, 0, 0, 800, 870);
-        const scaleX = exp.width / canvas.width, scaleY = exp.height / canvas.height;
-        layers.forEach(l => {
+    // Draw layers onto an export canvas with print-zone clipping and strings overlay
+    function drawLayersOnExport(eCtx, expW, expH, srcLayers, garmentCode) {
+        const scaleX = expW / canvas.width, scaleY = expH / canvas.height;
+        const g = GARMENTS[garmentCode || currentGarment];
+        const z = g.printZone;
+
+        // Clip to print zone
+        eCtx.save();
+        eCtx.beginPath();
+        eCtx.rect(expW * z.x, expH * z.y, expW * z.w, expH * z.h);
+        eCtx.clip();
+
+        (srcLayers || layers).forEach(l => {
+            if (!l.visible) return;
             const cx = (l.x + l.w / 2) * scaleX, cy = (l.y + l.h / 2) * scaleY;
             const w = l.w * scaleX, h = l.h * scaleY;
             eCtx.save();
@@ -3044,6 +3072,27 @@
             eCtx.drawImage(l.img, -w / 2, -h / 2, w, h);
             eCtx.restore();
         });
+        eCtx.restore();
+
+        // Strings overlay
+        if (g.stringsOverlay) {
+            const so = g.stringsOverlay;
+            eCtx.save();
+            eCtx.beginPath();
+            eCtx.rect(expW * so.x, expH * so.y, expW * so.w, expH * so.h);
+            eCtx.clip();
+            eCtx.drawImage(tshirtImg, 0, 0, expW, expH);
+            eCtx.restore();
+        }
+    }
+
+    function generateDesignPreview() {
+        // Generate a composite preview image (shirt + design)
+        const exp = document.createElement('canvas');
+        exp.width = 800; exp.height = 870;
+        const eCtx = exp.getContext('2d');
+        eCtx.drawImage(tshirtImg, 0, 0, 800, 870);
+        drawLayersOnExport(eCtx, 800, 870);
         return exp.toDataURL('image/jpeg', 0.8);
     }
 
@@ -3301,16 +3350,7 @@
         exp.width = 1200; exp.height = 1300;
         const eCtx = exp.getContext('2d');
         eCtx.drawImage(tshirtImg, 0, 0, 1200, 1300);
-        const scaleX = exp.width / canvas.width, scaleY = exp.height / canvas.height;
-        layers.forEach(l => {
-            const cx = (l.x + l.w / 2) * scaleX, cy = (l.y + l.h / 2) * scaleY;
-            const w = l.w * scaleX, h = l.h * scaleY;
-            eCtx.save();
-            eCtx.translate(cx, cy);
-            eCtx.rotate((l.rotation * Math.PI) / 180);
-            eCtx.drawImage(l.img, -w / 2, -h / 2, w, h);
-            eCtx.restore();
-        });
+        drawLayersOnExport(eCtx, 1200, 1300);
         const link = document.createElement('a');
         link.download = 'luxe-design.png';
         link.href = exp.toDataURL();
