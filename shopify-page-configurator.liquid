@@ -119,17 +119,28 @@
 
 <script>
   // ============================================
-  // VARIANT MAP — Update with your actual Shopify variant IDs
+  // VARIANT MAPS — Per garment, update with actual Shopify variant IDs
   // ============================================
-  // Find these in Shopify Admin → Products → Your Custom Tee → Variants
-  // Each variant should correspond to a size
-  const VARIANT_MAP = {
-    'S':   47583849382042,
-    'M':   47583849414810,
-    'L':   47583849447578,
-    'XL':  47583849480346,
-    '2XL': 47583849513114,
+  // Find these in Shopify Admin → Products → Variants
+  const GARMENT_VARIANTS = {
+    '5001 Staple Tee': {
+      'S':   47583849382042,
+      'M':   47583849414810,
+      'L':   47583849447578,
+      'XL':  47583849480346,
+      '2XL': 47583849513114,
+    },
+    '5102 Stencil Hood': {
+      'S':   null,  // ← Update with hoodie Shopify variant IDs
+      'M':   null,
+      'L':   null,
+      'XL':  null,
+      '2XL': null,
+    },
   };
+
+  // Fallback for messages that don't include garment name
+  const VARIANT_MAP = GARMENT_VARIANTS['5001 Staple Tee'];
 
   // If you prefer a single variant, set this (the size will be passed as a line item property)
   const SINGLE_VARIANT_ID = null; // e.g., 44123456789000
@@ -150,16 +161,23 @@
 
     console.log('[Shopify] Received addToCart:', event.data);
 
-    const { color, sizes, totalQty, artFiles, mockupUrl } = event.data;
+    const { color, sizes, totalQty, garment, artFiles, mockupUrl } = event.data;
     const errors = [];
 
+    console.log('[Shopify] Garment:', garment);
     console.log('[Shopify] Art files:', artFiles);
     console.log('[Shopify] Mockup URL:', mockupUrl);
+
+    // Pick the right variant map for this garment, fall back to tee variants
+    const variantMap = (garment && GARMENT_VARIANTS[garment]) || VARIANT_MAP;
+    const isFallback = garment && GARMENT_VARIANTS[garment] &&
+        Object.values(GARMENT_VARIANTS[garment]).every(v => v === null);
 
     try {
       // Add each size as a separate line item
       for (const [size, quantity] of Object.entries(sizes)) {
-        const variantId = VARIANT_MAP[size] || SINGLE_VARIANT_ID;
+        // Use garment-specific variant, or fall back to tee variant
+        let variantId = variantMap[size] || VARIANT_MAP[size] || SINGLE_VARIANT_ID;
 
         if (!variantId) {
           errors.push(`No variant ID for size ${size}`);
@@ -171,8 +189,13 @@
           'Shirt Color': color,
         };
 
+        // Always include garment name so orders are identifiable
+        if (garment) {
+          properties['Garment'] = garment;
+        }
+
         // If using a single variant, include size as property
-        if (!VARIANT_MAP[size] && SINGLE_VARIANT_ID) {
+        if (!variantMap[size] && SINGLE_VARIANT_ID) {
           properties['Size'] = size;
         }
 
