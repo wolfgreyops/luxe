@@ -646,6 +646,13 @@
             text-transform: uppercase; font-family: 'Geist', sans-serif; border-radius: 4px;
         }
         .stock-search button:hover { background: var(--accent-dark); }
+        .ai-style-row { margin-bottom: 8px; }
+        .ai-style-row select {
+            width: 100%; background: var(--sidebar-input); border: 1px solid var(--sidebar-input-border);
+            color: var(--text); padding: 7px 10px; font-size: 0.78rem; border-radius: 4px;
+            outline: none; font-family: 'Geist', sans-serif; cursor: pointer;
+        }
+        .ai-style-row select:focus { border-color: var(--accent); }
         .stock-categories { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
         .stock-cat-pill {
             background: var(--white); border: 1px solid var(--border);
@@ -1298,6 +1305,35 @@
                     <div id="stockResults" class="stock-grid"></div>
                     <button id="stockLoadMore" class="stock-load-more" onclick="loadMoreStock()" style="display:none">Load More</button>
                     <div class="stock-attr">Images by <a href="https://pixabay.com/" target="_blank">Pixabay</a></div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- AI Generate -->
+            <div class="tool-group collapsed">
+                <div class="tool-group-toggle" onclick="toggleGroup(this)">
+                    <h4>AI Generate</h4>
+                    <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tool-group-content">
+                    <div class="stock-search">
+                        <input type="text" id="aiPromptInput" placeholder="Describe your design..." onkeydown="if(event.key==='Enter')generateAIImage()">
+                        <button onclick="generateAIImage()">Generate</button>
+                    </div>
+                    <div class="ai-style-row">
+                        <select id="aiStyleSelect">
+                            <option value="">No style preset</option>
+                            <option value="vector illustration of">Vector Illustration</option>
+                            <option value="photorealistic">Photorealistic</option>
+                            <option value="abstract art of">Abstract Art</option>
+                            <option value="minimalist line art of">Line Art</option>
+                            <option value="watercolor painting of">Watercolor</option>
+                            <option value="retro vintage style">Retro / Vintage</option>
+                        </select>
+                    </div>
+                    <div id="aiResults" class="stock-grid"></div>
+                    <button id="aiGenerateMore" class="stock-load-more" onclick="generateAIImage()" style="display:none">Generate More</button>
                 </div>
             </div>
 
@@ -2089,6 +2125,60 @@
         img.onload = function() { addLayer(img); };
         img.onerror = function() { alert('Could not load image'); };
         img.src = url;
+    }
+
+    // ==============================
+    // AI Image Generation
+    // ==============================
+    function generateAIImage() {
+        const prompt = document.getElementById('aiPromptInput').value.trim();
+        if (!prompt) return;
+        const style = document.getElementById('aiStyleSelect').value;
+        const grid = document.getElementById('aiResults');
+        const moreBtn = document.getElementById('aiGenerateMore');
+        grid.innerHTML = '<div class="stock-spinner"></div>';
+        moreBtn.style.display = 'none';
+
+        fetch('/api/generate-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, style }),
+        })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok) {
+                grid.innerHTML = '<div class="stock-empty">' + (data.error || 'Generation failed') + '</div>';
+                return;
+            }
+            const dataUrl = 'data:' + (data.mimeType || 'image/png') + ';base64,' + data.image;
+            const thumb = document.createElement('div');
+            thumb.className = 'stock-thumb';
+            thumb.innerHTML = '<img src="' + dataUrl + '" alt="AI generated">';
+            thumb.onclick = () => addAIResult(dataUrl);
+            const prev = grid.innerHTML;
+            grid.innerHTML = '';
+            grid.appendChild(thumb);
+            const temp = document.createElement('div');
+            temp.innerHTML = prev.replace(/<div class="stock-spinner"><\/div>/, '');
+            while (temp.firstChild) {
+                if (temp.firstChild.classList && temp.firstChild.classList.contains('stock-thumb')) {
+                    grid.appendChild(temp.firstChild);
+                } else {
+                    temp.removeChild(temp.firstChild);
+                }
+            }
+            moreBtn.style.display = 'block';
+        })
+        .catch(() => {
+            grid.innerHTML = '<div class="stock-empty">Generation failed — try again</div>';
+        });
+    }
+
+    function addAIResult(dataUrl) {
+        const img = new Image();
+        img.onload = function() { addLayer(img); };
+        img.onerror = function() { alert('Could not load image'); };
+        img.src = dataUrl;
     }
 
     // ==============================
