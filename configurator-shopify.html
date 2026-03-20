@@ -1641,6 +1641,7 @@
             <select class="garment-select" id="garmentSelect" onchange="switchGarment(this.value)">
                 <option value="5001">5001 Staple Tee</option>
                 <option value="5102">5102 Stencil Hood</option>
+                <option value="DTF-PATCH-3">DTF Patch 3"</option>
             </select>
             <a href="https://dtf.613originals.com" style="font-family:'Geist','Oswald',sans-serif;font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);text-decoration:none;transition:color 0.3s">&larr; Back to Store</a>
         </div>
@@ -1874,6 +1875,20 @@
           { name: 'Walnut', hex: '#5c4033' },
           { name: 'White Marle', hex: '#e8e4e0' },
         ]
+      },
+      'DTF-PATCH-3': {
+        name: 'DTF Patch 3"',
+        detail: 'Sublimation Patch',
+        price: 3.99,
+        unit: 'patch',
+        prefix: 'DTF_PATCH_3IN',
+        printZone: { x: 0.5, y: 0.5, r: 0.38 },
+        circular: true,
+        noColors: true,
+        qtyOnly: true,
+        colors: [
+          { name: '', hex: '#FFFFFF' }
+        ]
       }
     };
     let currentGarment = '5001';
@@ -2016,7 +2031,13 @@
 
     function getPrintZone() {
         const cw = canvas.width, ch = canvas.height;
-        const z = GARMENTS[currentGarment].printZone;
+        const g = GARMENTS[currentGarment];
+        const z = g.printZone;
+        if (g.circular) {
+            const r = Math.min(cw, ch) * z.r;
+            return { cx: cw * z.x, cy: ch * z.y, r: r, circular: true,
+                     x: cw * z.x - r, y: ch * z.y - r, w: r * 2, h: r * 2 };
+        }
         return { x: cw * z.x, y: ch * z.y, w: cw * z.w, h: ch * z.h };
     }
 
@@ -2305,7 +2326,13 @@
             ctx.strokeStyle = 'rgba(255,255,255,0.6)';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([8, 5]);
-            ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
+            if (zone.circular) {
+                ctx.beginPath();
+                ctx.arc(zone.cx, zone.cy, zone.r, 0, Math.PI * 2);
+                ctx.stroke();
+            } else {
+                ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
+            }
             ctx.setLineDash([]);
             ctx.restore();
         }
@@ -2313,7 +2340,11 @@
         // Clip artwork to print zone
         ctx.save();
         ctx.beginPath();
-        ctx.rect(zone.x, zone.y, zone.w, zone.h);
+        if (zone.circular) {
+            ctx.arc(zone.cx, zone.cy, zone.r, 0, Math.PI * 2);
+        } else {
+            ctx.rect(zone.x, zone.y, zone.w, zone.h);
+        }
         ctx.clip();
 
         layers.forEach((layer, idx) => {
@@ -2429,31 +2460,60 @@
         const sel = document.getElementById('garmentSelect');
         if (sel) sel.value = code;
 
-        // Rebuild swatches
-        const container = document.getElementById('shirtSwatches');
-        container.innerHTML = '';
-        g.colors.forEach((c, i) => {
-            const imgFile = 'tees/' + g.prefix + '_' + c.name.toUpperCase().replace(/ /g, '_') + '.jpg';
-            const div = document.createElement('div');
-            div.className = 'swatch' + (i === 0 ? ' active' : '');
-            div.style.background = c.hex;
-            div.dataset.img = imgFile;
-            div.dataset.name = c.name;
-            div.addEventListener('click', function() { setShirt(this); });
-            container.appendChild(div);
-        });
+        // Shirt Color tool group
+        const colorGroup = document.getElementById('shirtSwatches')?.closest('.tool-group');
 
-        // Set first color active
-        const firstColor = g.colors[0];
-        const firstImg = 'tees/' + g.prefix + '_' + firstColor.name.toUpperCase().replace(/ /g, '_') + '.jpg';
-        tshirtImg.src = firstImg;
-        document.getElementById('colorName').textContent = firstColor.name;
+        if (g.noColors) {
+            // Hide swatch group, set image directly
+            if (colorGroup) colorGroup.style.display = 'none';
+            tshirtImg.src = 'tees/' + g.prefix + '.png';
+        } else {
+            // Show swatch group, rebuild swatches
+            if (colorGroup) colorGroup.style.display = '';
+            const container = document.getElementById('shirtSwatches');
+            container.innerHTML = '';
+            g.colors.forEach((c, i) => {
+                const imgFile = 'tees/' + g.prefix + '_' + c.name.toUpperCase().replace(/ /g, '_') + '.jpg';
+                const div = document.createElement('div');
+                div.className = 'swatch' + (i === 0 ? ' active' : '');
+                div.style.background = c.hex;
+                div.dataset.img = imgFile;
+                div.dataset.name = c.name;
+                div.addEventListener('click', function() { setShirt(this); });
+                container.appendChild(div);
+            });
+            const firstColor = g.colors[0];
+            const firstImg = 'tees/' + g.prefix + '_' + firstColor.name.toUpperCase().replace(/ /g, '_') + '.jpg';
+            tshirtImg.src = firstImg;
+        }
+
+        // Qty-only mode: replace size grid with single qty input
+        const sizeQtyRow = document.querySelector('.size-qty-row');
+        if (g.qtyOnly) {
+            sizeQtyRow.innerHTML = '<div class="size-qty-box" style="flex:1;max-width:160px"><label>Qty</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>';
+            sizeQtyRow.querySelector('input').addEventListener('input', updateOrderBtn);
+        } else {
+            const sizes = ['S','M','L','XL','2XL'];
+            sizeQtyRow.innerHTML = sizes.map(s => '<div class="size-qty-box"><label>' + s + '</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>').join('');
+            sizeQtyRow.querySelectorAll('input').forEach(inp => inp.addEventListener('input', updateOrderBtn));
+        }
 
         // Update product info
+        const firstColor = g.colors[0];
+        const colorLabel = g.noColors ? '' : firstColor.name;
         const nameEl = document.getElementById('productName');
-        if (nameEl) nameEl.innerHTML = g.name + ' — <span id="colorName">' + firstColor.name + '</span>';
+        if (nameEl) {
+            if (g.noColors) {
+                nameEl.innerHTML = g.name + '<span id="colorName" style="display:none"></span>';
+            } else {
+                nameEl.innerHTML = g.name + ' — <span id="colorName">' + colorLabel + '</span>';
+            }
+        }
         const detailEl = document.getElementById('productDetail');
         if (detailEl) detailEl.textContent = g.detail + ' \u2022 $' + g.price.toFixed(2) + '/' + g.unit;
+
+        render();
+        updateOrderBtn();
     }
 
     // Upload
@@ -3137,21 +3197,27 @@
         }
 
         // Collect size quantities
-        const sizeInputs = document.querySelectorAll('.size-qty-box input');
-        const sizes = ['S', 'M', 'L', 'XL', '2XL'];
+        const garment = GARMENTS[currentGarment];
         const order = {};
         let totalQty = 0;
-        sizeInputs.forEach((input, i) => {
-            const qty = parseInt(input.value) || 0;
-            if (qty > 0) { order[sizes[i]] = qty; totalQty += qty; }
-        });
+        if (garment.qtyOnly) {
+            const qtyInput = document.querySelector('.size-qty-box input');
+            const qty = parseInt(qtyInput.value) || 0;
+            if (qty > 0) { order['One Size'] = qty; totalQty = qty; }
+        } else {
+            const sizeInputs = document.querySelectorAll('.size-qty-box input');
+            const sizes = ['S', 'M', 'L', 'XL', '2XL'];
+            sizeInputs.forEach((input, i) => {
+                const qty = parseInt(input.value) || 0;
+                if (qty > 0) { order[sizes[i]] = qty; totalQty += qty; }
+            });
+        }
         if (totalQty === 0) {
-            alert('Please enter quantities for at least one size.');
+            alert(garment.qtyOnly ? 'Please enter a quantity.' : 'Please enter quantities for at least one size.');
             return;
         }
 
         const colorName = document.getElementById('colorName').textContent;
-        const garment = GARMENTS[currentGarment];
         const subtotal = totalQty * garment.price;
 
         // Snapshot current state into a cart item
@@ -3173,7 +3239,7 @@
         // Show confirmation modal
         const modal = document.getElementById('cartAddedModal');
         document.getElementById('cartAddedSummary').textContent =
-            `${garment.name} — ${colorName} \u00d7 ${totalQty}`;
+            garment.noColors ? `${garment.name} \u00d7 ${totalQty}` : `${garment.name} — ${colorName} \u00d7 ${totalQty}`;
         const checkoutBtn = document.getElementById('cartAddedCheckoutBtn');
         checkoutBtn.textContent = `Checkout (${cart.length} ${cart.length === 1 ? 'item' : 'items'})`;
         modal.classList.add('active');
@@ -3265,7 +3331,12 @@
         // Clip to print zone
         eCtx.save();
         eCtx.beginPath();
-        eCtx.rect(expW * z.x, expH * z.y, expW * z.w, expH * z.h);
+        if (g.circular) {
+            const r = Math.min(expW, expH) * z.r;
+            eCtx.arc(expW * z.x, expH * z.y, r, 0, Math.PI * 2);
+        } else {
+            eCtx.rect(expW * z.x, expH * z.y, expW * z.w, expH * z.h);
+        }
         eCtx.clip();
 
         (srcLayers || layers).forEach(l => {

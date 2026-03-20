@@ -901,6 +901,23 @@
         }
         .back-link a:hover { color: var(--accent); }
 
+        .garment-select-wrap {
+            position: absolute; top: 20px; left: 24px; z-index: 10;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .garment-select {
+            font-family: 'Geist', 'Oswald', sans-serif;
+            font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--text); background: var(--white);
+            border: 1px solid var(--border); border-radius: 4px;
+            padding: 6px 28px 6px 10px; cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+            transition: border-color 0.3s;
+        }
+        .garment-select:hover, .garment-select:focus { border-color: var(--accent); }
+
         /* Divider line */
         .section-divider {
             height: 1px;
@@ -1138,6 +1155,8 @@
             /* Back link */
             .back-link { top: 14px; right: 14px; }
             .back-link a { font-size: 0.6rem; }
+            .garment-select-wrap { top: 14px; left: 14px; }
+            .garment-select { font-size: 0.6rem; padding: 5px 24px 5px 8px; }
 
             /* Cart panel full-width on mobile */
             .cart-panel {
@@ -1211,7 +1230,7 @@
                     <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
                 <div class="tool-group-content">
-                    <div class="color-swatches">
+                    <div class="color-swatches" id="shirtSwatches">
                         <div class="swatch active" data-img="tees/5001_STAPLE_TEE_BLACK.jpg" data-name="Black" style="background:#1a1a1a" onclick="setShirt(this)"></div>
                         <div class="swatch" data-img="tees/5001_STAPLE_TEE_WHITE.jpg" data-name="White" style="background:#f0f0f0" onclick="setShirt(this)"></div>
                         <div class="swatch" data-img="tees/5001_STAPLE_TEE_NAVY.jpg" data-name="Navy" style="background:#1a2744" onclick="setShirt(this)"></div>
@@ -1445,6 +1464,12 @@
 
     <!-- RIGHT: Preview Panel -->
     <div class="preview-panel">
+        <div class="garment-select-wrap">
+            <select class="garment-select" id="garmentSelect" onchange="switchGarment(this.value)">
+                <option value="5001">5001 Staple Tee</option>
+                <option value="DTF-PATCH-3">DTF Patch 3"</option>
+            </select>
+        </div>
         <div class="back-link">
             <a href="index.html">&larr; Back to Site</a>
         </div>
@@ -1461,8 +1486,8 @@
         </div>
 
         <div class="product-info">
-            <div class="product-name">5001 Staple Tee — <span id="colorName">Black</span></div>
-            <div class="product-detail">Premium 5.3oz Cotton &bull; $12.99/tee &bull; Shipping $9.99 + $1/ea</div>
+            <div class="product-name" id="productName">5001 Staple Tee — <span id="colorName">Black</span></div>
+            <div class="product-detail" id="productDetail">Premium 5.3oz Cotton &bull; $12.99/tee &bull; Shipping $9.99 + $1/ea</div>
             <div class="size-qty-row">
                 <div class="size-qty-box"><label>S</label><input type="number" min="0" value="0" placeholder="0"></div>
                 <div class="size-qty-box"><label>M</label><input type="number" min="0" value="0" placeholder="0"></div>
@@ -1662,7 +1687,14 @@
 
     function getPrintZone() {
         const cw = canvas.width, ch = canvas.height;
-        return { x: cw * 0.34, y: ch * 0.24, w: cw * 0.32, h: ch * 0.40 };
+        const g = GARMENTS[currentGarment];
+        const z = g.printZone;
+        if (g.circular) {
+            const r = Math.min(cw, ch) * z.r;
+            return { cx: cw * z.x, cy: ch * z.y, r: r, circular: true,
+                     x: cw * z.x - r, y: ch * z.y - r, w: r * 2, h: r * 2 };
+        }
+        return { x: cw * z.x, y: ch * z.y, w: cw * z.w, h: ch * z.h };
     }
 
     function addLayer(img, baseScale) {
@@ -1938,10 +1970,26 @@
             ctx.strokeStyle = 'rgba(255,255,255,0.6)';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([8, 5]);
-            ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
+            if (zone.circular) {
+                ctx.beginPath();
+                ctx.arc(zone.cx, zone.cy, zone.r, 0, Math.PI * 2);
+                ctx.stroke();
+            } else {
+                ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
+            }
             ctx.setLineDash([]);
             ctx.restore();
         }
+
+        // Clip artwork to print zone
+        ctx.save();
+        ctx.beginPath();
+        if (zone.circular) {
+            ctx.arc(zone.cx, zone.cy, zone.r, 0, Math.PI * 2);
+        } else {
+            ctx.rect(zone.x, zone.y, zone.w, zone.h);
+        }
+        ctx.clip();
 
         layers.forEach((layer, idx) => {
             if (!layer.visible) return;
@@ -1950,6 +1998,18 @@
             ctx.translate(cx, cy);
             ctx.rotate((layer.rotation * Math.PI) / 180);
             ctx.drawImage(layer.img, -layer.w / 2, -layer.h / 2, layer.w, layer.h);
+            ctx.restore();
+        });
+
+        // Restore from clip so handles draw outside zone
+        ctx.restore();
+
+        layers.forEach((layer, idx) => {
+            if (!layer.visible) return;
+            ctx.save();
+            const cx = layer.x + layer.w / 2, cy = layer.y + layer.h / 2;
+            ctx.translate(cx, cy);
+            ctx.rotate((layer.rotation * Math.PI) / 180);
 
             if (showBounds && idx === selectedIdx) {
                 ctx.strokeStyle = 'rgba(122,53,248,0.6)';
@@ -2030,6 +2090,70 @@
         el.classList.add('active');
         tshirtImg.src = el.dataset.img;
         document.getElementById('colorName').textContent = el.dataset.name || '';
+    }
+
+    // Switch garment type
+    function switchGarment(code) {
+        const g = GARMENTS[code];
+        if (!g) return;
+        currentGarment = code;
+        PRICE_PER_TEE = g.price;
+
+        const sel = document.getElementById('garmentSelect');
+        if (sel) sel.value = code;
+
+        // Shirt Color tool group
+        const colorGroup = document.getElementById('shirtSwatches')?.closest('.tool-group');
+
+        if (g.noColors) {
+            if (colorGroup) colorGroup.style.display = 'none';
+            tshirtImg.src = 'tees/' + g.prefix + '.png';
+        } else {
+            if (colorGroup) colorGroup.style.display = '';
+            const container = document.getElementById('shirtSwatches');
+            container.innerHTML = '';
+            g.colors.forEach((c, i) => {
+                const imgFile = 'tees/' + g.prefix + '_' + c.name.toUpperCase().replace(/ /g, '_') + '.jpg';
+                const div = document.createElement('div');
+                div.className = 'swatch' + (i === 0 ? ' active' : '');
+                div.style.background = c.hex;
+                div.dataset.img = imgFile;
+                div.dataset.name = c.name;
+                div.addEventListener('click', function() { setShirt(this); });
+                container.appendChild(div);
+            });
+            const firstColor = g.colors[0];
+            const firstImg = 'tees/' + g.prefix + '_' + firstColor.name.toUpperCase().replace(/ /g, '_') + '.jpg';
+            tshirtImg.src = firstImg;
+        }
+
+        // Qty-only mode
+        const sizeQtyRow = document.querySelector('.size-qty-row');
+        if (g.qtyOnly) {
+            sizeQtyRow.innerHTML = '<div class="size-qty-box" style="flex:1;max-width:160px"><label>Qty</label><input type="number" min="0" value="0" placeholder="0"></div>';
+            sizeQtyRow.querySelector('input').addEventListener('input', updateOrderBtn);
+        } else {
+            const sizes = ['S','M','L','XL','2XL'];
+            sizeQtyRow.innerHTML = sizes.map(s => '<div class="size-qty-box"><label>' + s + '</label><input type="number" min="0" value="0" placeholder="0"></div>').join('');
+            sizeQtyRow.querySelectorAll('input').forEach(inp => inp.addEventListener('input', updateOrderBtn));
+        }
+
+        // Update product info
+        const firstColor = g.colors[0];
+        const colorLabel = g.noColors ? '' : firstColor.name;
+        const nameEl = document.getElementById('productName');
+        if (nameEl) {
+            if (g.noColors) {
+                nameEl.innerHTML = g.name + '<span id="colorName" style="display:none"></span>';
+            } else {
+                nameEl.innerHTML = g.name + ' \u2014 <span id="colorName">' + colorLabel + '</span>';
+            }
+        }
+        const detailEl = document.getElementById('productDetail');
+        if (detailEl) detailEl.textContent = g.detail + ' \u2022 $' + g.price.toFixed(2) + '/' + g.unit;
+
+        render();
+        updateOrderBtn();
     }
 
     // Upload
@@ -2644,8 +2768,49 @@
 
     function clearDesign() { layers = []; selectedIdx = -1; syncSliders(); syncAttributes(); render(); updateOrderBtn(); renderLayersList(); }
 
+    // Garment config
+    const GARMENTS = {
+      '5001': {
+        name: '5001 Staple Tee',
+        detail: 'Premium 5.3oz Cotton',
+        price: 12.99,
+        unit: 'tee',
+        prefix: '5001_STAPLE_TEE',
+        printZone: { x: 0.34, y: 0.24, w: 0.32, h: 0.40 },
+        colors: [
+          { name: 'Black', hex: '#1a1a1a' },
+          { name: 'White', hex: '#f0f0f0' },
+          { name: 'Navy', hex: '#1a2744' },
+          { name: 'Charcoal', hex: '#3a3a3a' },
+          { name: 'Orchid', hex: '#d4b8c4' },
+          { name: 'Lapis', hex: '#6a7db8' },
+          { name: 'Red', hex: '#c0392b' },
+          { name: 'Burgundy', hex: '#5a1a2a' },
+          { name: 'Forest Green', hex: '#1a3a2a' },
+          { name: 'Cobalt', hex: '#2d4a8a' },
+          { name: 'Sand', hex: '#c4a67a' },
+          { name: 'Bone', hex: '#d8cfc0' },
+        ]
+      },
+      'DTF-PATCH-3': {
+        name: 'DTF Patch 3"',
+        detail: 'Sublimation Patch',
+        price: 3.99,
+        unit: 'patch',
+        prefix: 'DTF_PATCH_3IN',
+        printZone: { x: 0.5, y: 0.5, r: 0.38 },
+        circular: true,
+        noColors: true,
+        qtyOnly: true,
+        colors: [
+          { name: '', hex: '#FFFFFF' }
+        ]
+      }
+    };
+    let currentGarment = '5001';
+
     // Pricing
-    const PRICE_PER_TEE = 12.99;
+    let PRICE_PER_TEE = 12.99;
     const SHIPPING_BASE = 9.99;    // first shirt
     const SHIPPING_EXTRA = 1.00;   // each additional shirt
 
@@ -2661,16 +2826,23 @@
         }
 
         // Collect size quantities
-        const sizeInputs = document.querySelectorAll('.size-qty-box input');
-        const sizes = ['S', 'M', 'L', 'XL', '2XL'];
+        const garment = GARMENTS[currentGarment];
         const order = {};
         let totalQty = 0;
-        sizeInputs.forEach((input, i) => {
-            const qty = parseInt(input.value) || 0;
-            if (qty > 0) { order[sizes[i]] = qty; totalQty += qty; }
-        });
+        if (garment.qtyOnly) {
+            const qtyInput = document.querySelector('.size-qty-box input');
+            const qty = parseInt(qtyInput.value) || 0;
+            if (qty > 0) { order['One Size'] = qty; totalQty = qty; }
+        } else {
+            const sizeInputs = document.querySelectorAll('.size-qty-box input');
+            const sizes = ['S', 'M', 'L', 'XL', '2XL'];
+            sizeInputs.forEach((input, i) => {
+                const qty = parseInt(input.value) || 0;
+                if (qty > 0) { order[sizes[i]] = qty; totalQty += qty; }
+            });
+        }
         if (totalQty === 0) {
-            alert('Please enter quantities for at least one size.');
+            alert(garment.qtyOnly ? 'Please enter a quantity.' : 'Please enter quantities for at least one size.');
             return;
         }
 
@@ -2684,6 +2856,20 @@
         cartCanvas.style.display = 'block';
         cCtx.drawImage(tshirtImg, 0, 0, cartCanvas.width, cartCanvas.height);
         const scX = cartCanvas.width / canvas.width, scY = cartCanvas.height / canvas.height;
+
+        // Clip layers to print zone on cart preview
+        const g = GARMENTS[currentGarment];
+        const z = g.printZone;
+        cCtx.save();
+        cCtx.beginPath();
+        if (g.circular) {
+            const r = Math.min(cartCanvas.width, cartCanvas.height) * z.r;
+            cCtx.arc(cartCanvas.width * z.x, cartCanvas.height * z.y, r, 0, Math.PI * 2);
+        } else {
+            cCtx.rect(cartCanvas.width * z.x, cartCanvas.height * z.y, cartCanvas.width * z.w, cartCanvas.height * z.h);
+        }
+        cCtx.clip();
+
         layers.forEach(l => {
             if (!l.visible) return;
             const cx = (l.x + l.w / 2) * scX, cy = (l.y + l.h / 2) * scY;
@@ -2694,11 +2880,13 @@
             cCtx.drawImage(l.img, -w / 2, -h / 2, w, h);
             cCtx.restore();
         });
+        cCtx.restore();
 
         // Populate cart info
         const colorName = document.getElementById('colorName').textContent;
-        document.getElementById('cartProductName').textContent = `5001 Staple Tee — ${colorName}`;
-        document.getElementById('cartProductDetail').textContent = `$${PRICE_PER_TEE.toFixed(2)} per tee`;
+        const productLabel = garment.noColors ? garment.name : `${garment.name} — ${colorName}`;
+        document.getElementById('cartProductName').textContent = productLabel;
+        document.getElementById('cartProductDetail').textContent = `$${PRICE_PER_TEE.toFixed(2)} per ${garment.unit}`;
 
         // Build line items
         const lineItemsEl = document.getElementById('cartLineItems');
@@ -2725,7 +2913,7 @@
         // Totals
         const grandTotal = subtotal + shipping;
         document.getElementById('cartTotal').textContent = `$${grandTotal.toFixed(2)}`;
-        document.getElementById('cartQtySummary').textContent = `${totalQty} tee${totalQty !== 1 ? 's' : ''} + shipping`;
+        document.getElementById('cartQtySummary').textContent = `${totalQty} ${garment.unit}${totalQty !== 1 ? 's' : ''} + shipping`;
 
         // Store order data for checkout
         window._orderData = { order, totalQty, subtotal, grandTotal };
