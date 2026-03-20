@@ -2051,13 +2051,16 @@
 
     // Get the rendered position/size of tshirtImg within the canvas
     function getImgRect() {
-        const cw = canvas.width, ch = canvas.height;
-        const nat = tshirtImg.naturalWidth / tshirtImg.naturalHeight;
-        // The CSS constrains tshirt-img to max 95% width/height, centered
-        let iw = cw * 0.95, ih = ch * 0.95;
-        if (iw / ih > nat) { iw = ih * nat; } else { ih = iw / nat; }
-        const ix = (cw - iw) / 2, iy = (ch - ih) / 2;
-        return { ix, iy, iw, ih };
+        const canvasRect = canvas.getBoundingClientRect();
+        const imgRect = tshirtImg.getBoundingClientRect();
+        const scaleX = canvas.width / canvasRect.width;
+        const scaleY = canvas.height / canvasRect.height;
+        return {
+            ix: (imgRect.left - canvasRect.left) * scaleX,
+            iy: (imgRect.top - canvasRect.top) * scaleY,
+            iw: imgRect.width * scaleX,
+            ih: imgRect.height * scaleY
+        };
     }
 
     function getPrintZone() {
@@ -2494,6 +2497,15 @@
         // Update dropdown
         const sel = document.getElementById('garmentSelect');
         if (sel) sel.value = code;
+
+        // Size the product image — circular patches need to scale up
+        if (g.circular) {
+            tshirtImg.style.width = '75%';
+            tshirtImg.style.height = 'auto';
+        } else {
+            tshirtImg.style.width = '';
+            tshirtImg.style.height = '';
+        }
 
         // Shirt Color tool group
         const colorGroup = document.getElementById('shirtSwatches')?.closest('.tool-group');
