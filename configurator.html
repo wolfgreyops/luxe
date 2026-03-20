@@ -1965,18 +1965,12 @@
 
         // Print area bounding box
         const zone = getPrintZone();
-        if (showPrintZone) {
+        if (showPrintZone && !zone.circular) {
             ctx.save();
             ctx.strokeStyle = 'rgba(255,255,255,0.6)';
             ctx.lineWidth = 1.5;
             ctx.setLineDash([8, 5]);
-            if (zone.circular) {
-                ctx.beginPath();
-                ctx.arc(zone.cx, zone.cy, zone.r, 0, Math.PI * 2);
-                ctx.stroke();
-            } else {
-                ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
-            }
+            ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
             ctx.setLineDash([]);
             ctx.restore();
         }
@@ -2151,6 +2145,10 @@
         }
         const detailEl = document.getElementById('productDetail');
         if (detailEl) detailEl.textContent = g.detail + ' \u2022 $' + g.price.toFixed(2) + '/' + g.unit;
+
+        // Hide print zone toggle for circular products
+        const toggles = document.querySelector('.preview-toggles');
+        if (toggles) toggles.style.display = g.circular ? 'none' : '';
 
         render();
         updateOrderBtn();
@@ -2798,7 +2796,7 @@
         price: 3.99,
         unit: 'patch',
         prefix: 'DTF_PATCH_3IN',
-        printZone: { x: 0.5, y: 0.5, r: 0.38 },
+        printZone: { x: 0.5, y: 0.5, r: 0.33 },
         circular: true,
         noColors: true,
         qtyOnly: true,
