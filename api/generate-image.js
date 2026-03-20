@@ -30,7 +30,6 @@ module.exports = async (req, res) => {
           contents: [{ parts: [{ text: fullPrompt }] }],
           generationConfig: {
             responseModalities: ['IMAGE'],
-            imageSizeOptions: { imageSize: '2K' },
           },
         }),
       }
