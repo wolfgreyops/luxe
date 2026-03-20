@@ -1882,7 +1882,7 @@
         price: 3.99,
         unit: 'patch',
         prefix: 'DTF_PATCH_3IN',
-        printZone: { x: 0.5, y: 0.5, r: 0.33 },
+        printZone: { x: 0.5, y: 0.5, r: 0.41 },
         circular: true,
         noColors: true,
         qtyOnly: true,
@@ -2015,6 +2015,26 @@
     let showPrintZone = true;
     let attrLocked = true;
     let textColor = '#000000';
+    let patchBorderOverlay = null; // border-only image for circular products
+
+    // Build a border-only overlay: full patch with inner circle cut out
+    function buildPatchBorderOverlay(img, g) {
+        if (!g.circular) { patchBorderOverlay = null; return; }
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth || img.width;
+        c.height = img.naturalHeight || img.height;
+        const cx2 = c.getContext('2d');
+        cx2.drawImage(img, 0, 0, c.width, c.height);
+        // Cut out the inner circle to leave only the stitched border ring
+        cx2.globalCompositeOperation = 'destination-out';
+        cx2.beginPath();
+        const z = g.printZone;
+        cx2.arc(c.width * z.x, c.height * z.y, Math.min(c.width, c.height) * z.r, 0, Math.PI * 2);
+        cx2.fill();
+        const overlay = new Image();
+        overlay.src = c.toDataURL('image/png');
+        patchBorderOverlay = overlay;
+    }
 
     function sel() { return selectedIdx >= 0 ? layers[selectedIdx] : null; }
 
@@ -2029,14 +2049,29 @@
     tshirtImg.addEventListener('load', sizeCanvas);
     sizeCanvas();
 
+    // Get the rendered position/size of tshirtImg within the canvas
+    function getImgRect() {
+        const cw = canvas.width, ch = canvas.height;
+        const nat = tshirtImg.naturalWidth / tshirtImg.naturalHeight;
+        // The CSS constrains tshirt-img to max 95% width/height, centered
+        let iw = cw * 0.95, ih = ch * 0.95;
+        if (iw / ih > nat) { iw = ih * nat; } else { ih = iw / nat; }
+        const ix = (cw - iw) / 2, iy = (ch - ih) / 2;
+        return { ix, iy, iw, ih };
+    }
+
     function getPrintZone() {
         const cw = canvas.width, ch = canvas.height;
         const g = GARMENTS[currentGarment];
         const z = g.printZone;
         if (g.circular) {
-            const r = Math.min(cw, ch) * z.r;
-            return { cx: cw * z.x, cy: ch * z.y, r: r, circular: true,
-                     x: cw * z.x - r, y: ch * z.y - r, w: r * 2, h: r * 2 };
+            // Compute relative to the actual rendered image position
+            const { ix, iy, iw, ih } = getImgRect();
+            const cx = ix + iw * z.x;
+            const cy = iy + ih * z.y;
+            const r = Math.min(iw, ih) * z.r;
+            return { cx, cy, r, circular: true,
+                     x: cx - r, y: cy - r, w: r * 2, h: r * 2 };
         }
         return { x: cw * z.x, y: ch * z.y, w: cw * z.w, h: ch * z.h };
     }
@@ -2354,6 +2389,12 @@
         // Restore from clip so handles/guides draw outside zone
         ctx.restore();
 
+        // Draw patch border overlay on top of artwork (stitching over art)
+        if (zone.circular && patchBorderOverlay && patchBorderOverlay.complete) {
+            const ir = getImgRect();
+            ctx.drawImage(patchBorderOverlay, ir.ix, ir.iy, ir.iw, ir.ih);
+        }
+
         // Draw selection handles (outside clip)
         layers.forEach((layer, idx) => {
             if (!layer.visible) return;
@@ -2460,8 +2501,16 @@
         if (g.noColors) {
             // Hide swatch group, set image directly
             if (colorGroup) colorGroup.style.display = 'none';
+            if (g.circular) {
+                const tmp = new Image();
+                tmp.onload = () => buildPatchBorderOverlay(tmp, g);
+                tmp.src = 'tees/' + g.prefix + '.png';
+            } else {
+                patchBorderOverlay = null;
+            }
             tshirtImg.src = 'tees/' + g.prefix + '.png';
         } else {
+            patchBorderOverlay = null;
             // Show swatch group, rebuild swatches
             if (colorGroup) colorGroup.style.display = '';
             const container = document.getElementById('shirtSwatches');
@@ -3330,8 +3379,13 @@
         eCtx.save();
         eCtx.beginPath();
         if (g.circular) {
-            const r = Math.min(expW, expH) * z.r;
-            eCtx.arc(expW * z.x, expH * z.y, r, 0, Math.PI * 2);
+            // Match the live preview's image-relative zone on the export canvas
+            const nat = tshirtImg.naturalWidth / tshirtImg.naturalHeight;
+            let iw = expW, ih = expH;
+            if (iw / ih > nat) { iw = ih * nat; } else { ih = iw / nat; }
+            const ix = (expW - iw) / 2, iy = (expH - ih) / 2;
+            const r = Math.min(iw, ih) * z.r;
+            eCtx.arc(ix + iw * z.x, iy + ih * z.y, r, 0, Math.PI * 2);
         } else {
             eCtx.rect(expW * z.x, expH * z.y, expW * z.w, expH * z.h);
         }
@@ -3349,6 +3403,14 @@
         });
         eCtx.restore();
 
+        // Draw patch border overlay on top (stitching over art)
+        if (g.circular && patchBorderOverlay && patchBorderOverlay.complete) {
+            const nat = tshirtImg.naturalWidth / tshirtImg.naturalHeight;
+            let iw2 = expW, ih2 = expH;
+            if (iw2 / ih2 > nat) { iw2 = ih2 * nat; } else { ih2 = iw2 / nat; }
+            const ix2 = (expW - iw2) / 2, iy2 = (expH - ih2) / 2;
+            eCtx.drawImage(patchBorderOverlay, ix2, iy2, iw2, ih2);
+        }
     }
 
     function generateDesignPreview() {

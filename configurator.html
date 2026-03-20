@@ -1669,6 +1669,24 @@
     const ROTATE_HANDLE_DIST = 28;
     let showBounds = false;
     let showPrintZone = true;
+    let patchBorderOverlay = null;
+
+    function buildPatchBorderOverlay(img, g) {
+        if (!g.circular) { patchBorderOverlay = null; return; }
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth || img.width;
+        c.height = img.naturalHeight || img.height;
+        const cx2 = c.getContext('2d');
+        cx2.drawImage(img, 0, 0, c.width, c.height);
+        cx2.globalCompositeOperation = 'destination-out';
+        cx2.beginPath();
+        const z = g.printZone;
+        cx2.arc(c.width * z.x, c.height * z.y, Math.min(c.width, c.height) * z.r, 0, Math.PI * 2);
+        cx2.fill();
+        const overlay = new Image();
+        overlay.src = c.toDataURL('image/png');
+        patchBorderOverlay = overlay;
+    }
     let attrLocked = true;
     let textColor = '#000000';
 
@@ -1685,14 +1703,26 @@
     tshirtImg.addEventListener('load', sizeCanvas);
     sizeCanvas();
 
+    function getImgRect() {
+        const cw = canvas.width, ch = canvas.height;
+        const nat = tshirtImg.naturalWidth / tshirtImg.naturalHeight;
+        let iw = cw * 0.95, ih = ch * 0.95;
+        if (iw / ih > nat) { iw = ih * nat; } else { ih = iw / nat; }
+        const ix = (cw - iw) / 2, iy = (ch - ih) / 2;
+        return { ix, iy, iw, ih };
+    }
+
     function getPrintZone() {
         const cw = canvas.width, ch = canvas.height;
         const g = GARMENTS[currentGarment];
         const z = g.printZone;
         if (g.circular) {
-            const r = Math.min(cw, ch) * z.r;
-            return { cx: cw * z.x, cy: ch * z.y, r: r, circular: true,
-                     x: cw * z.x - r, y: ch * z.y - r, w: r * 2, h: r * 2 };
+            const { ix, iy, iw, ih } = getImgRect();
+            const cx = ix + iw * z.x;
+            const cy = iy + ih * z.y;
+            const r = Math.min(iw, ih) * z.r;
+            return { cx, cy, r, circular: true,
+                     x: cx - r, y: cy - r, w: r * 2, h: r * 2 };
         }
         return { x: cw * z.x, y: ch * z.y, w: cw * z.w, h: ch * z.h };
     }
@@ -1998,6 +2028,12 @@
         // Restore from clip so handles draw outside zone
         ctx.restore();
 
+        // Draw patch border overlay on top of artwork (stitching over art)
+        if (zone.circular && patchBorderOverlay && patchBorderOverlay.complete) {
+            const ir = getImgRect();
+            ctx.drawImage(patchBorderOverlay, ir.ix, ir.iy, ir.iw, ir.ih);
+        }
+
         layers.forEach((layer, idx) => {
             if (!layer.visible) return;
             ctx.save();
@@ -2101,8 +2137,16 @@
 
         if (g.noColors) {
             if (colorGroup) colorGroup.style.display = 'none';
+            if (g.circular) {
+                const tmp = new Image();
+                tmp.onload = () => buildPatchBorderOverlay(tmp, g);
+                tmp.src = 'tees/' + g.prefix + '.png';
+            } else {
+                patchBorderOverlay = null;
+            }
             tshirtImg.src = 'tees/' + g.prefix + '.png';
         } else {
+            patchBorderOverlay = null;
             if (colorGroup) colorGroup.style.display = '';
             const container = document.getElementById('shirtSwatches');
             container.innerHTML = '';
@@ -2796,7 +2840,7 @@
         price: 3.99,
         unit: 'patch',
         prefix: 'DTF_PATCH_3IN',
-        printZone: { x: 0.5, y: 0.5, r: 0.33 },
+        printZone: { x: 0.5, y: 0.5, r: 0.41 },
         circular: true,
         noColors: true,
         qtyOnly: true,
@@ -2861,8 +2905,12 @@
         cCtx.save();
         cCtx.beginPath();
         if (g.circular) {
-            const r = Math.min(cartCanvas.width, cartCanvas.height) * z.r;
-            cCtx.arc(cartCanvas.width * z.x, cartCanvas.height * z.y, r, 0, Math.PI * 2);
+            const nat = tshirtImg.naturalWidth / tshirtImg.naturalHeight;
+            let ciw = cartCanvas.width, cih = cartCanvas.height;
+            if (ciw / cih > nat) { ciw = cih * nat; } else { cih = ciw / nat; }
+            const cix = (cartCanvas.width - ciw) / 2, ciy = (cartCanvas.height - cih) / 2;
+            const r = Math.min(ciw, cih) * z.r;
+            cCtx.arc(cix + ciw * z.x, ciy + cih * z.y, r, 0, Math.PI * 2);
         } else {
             cCtx.rect(cartCanvas.width * z.x, cartCanvas.height * z.y, cartCanvas.width * z.w, cartCanvas.height * z.h);
         }
@@ -2879,6 +2927,15 @@
             cCtx.restore();
         });
         cCtx.restore();
+
+        // Draw patch border overlay on top (stitching over art)
+        if (g.circular && patchBorderOverlay && patchBorderOverlay.complete) {
+            const nat = tshirtImg.naturalWidth / tshirtImg.naturalHeight;
+            let ciw2 = cartCanvas.width, cih2 = cartCanvas.height;
+            if (ciw2 / cih2 > nat) { ciw2 = cih2 * nat; } else { cih2 = ciw2 / nat; }
+            const cix2 = (cartCanvas.width - ciw2) / 2, ciy2 = (cartCanvas.height - cih2) / 2;
+            cCtx.drawImage(patchBorderOverlay, cix2, ciy2, ciw2, cih2);
+        }
 
         // Populate cart info
         const colorName = document.getElementById('colorName').textContent;
