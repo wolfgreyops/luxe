@@ -653,6 +653,15 @@
             outline: none; font-family: 'Geist', sans-serif; cursor: pointer;
         }
         .ai-style-row select:focus { border-color: var(--accent); }
+        .preview-toggles {
+            display: flex; gap: 12px; justify-content: center; margin-top: 6px;
+        }
+        .preview-toggle {
+            display: flex; align-items: center; gap: 4px; cursor: pointer;
+            font-size: 0.65rem; color: var(--grey); font-family: 'Geist', sans-serif;
+            letter-spacing: 0.3px; text-transform: uppercase;
+        }
+        .preview-toggle input { cursor: pointer; }
         .stock-categories { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
         .stock-cat-pill {
             background: var(--white); border: 1px solid var(--border);
@@ -1447,6 +1456,9 @@
             <img class="tshirt-img" id="tshirtImg" src="tees/5001_STAPLE_TEE_BLACK.jpg" alt="T-Shirt">
             <canvas id="designCanvas"></canvas>
         </div>
+        <div class="preview-toggles">
+            <label class="preview-toggle"><input type="checkbox" id="showPrintZoneToggle" checked onchange="togglePrintZone()"><span>Print Zone</span></label>
+        </div>
 
         <div class="product-info">
             <div class="product-name">5001 Staple Tee — <span id="colorName">Black</span></div>
@@ -1631,6 +1643,7 @@
     const HANDLE_HIT = 16;
     const ROTATE_HANDLE_DIST = 28;
     let showBounds = false;
+    let showPrintZone = true;
     let attrLocked = true;
     let textColor = '#000000';
 
@@ -1920,13 +1933,15 @@
 
         // Print area bounding box
         const zone = getPrintZone();
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([8, 5]);
-        ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
-        ctx.setLineDash([]);
-        ctx.restore();
+        if (showPrintZone) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([8, 5]);
+            ctx.strokeRect(zone.x, zone.y, zone.w, zone.h);
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
 
         layers.forEach((layer, idx) => {
             if (!layer.visible) return;
@@ -2172,6 +2187,11 @@
         .catch(() => {
             grid.innerHTML = '<div class="stock-empty">Generation failed — try again</div>';
         });
+    }
+
+    function togglePrintZone() {
+        showPrintZone = document.getElementById('showPrintZoneToggle').checked;
+        render();
     }
 
     function removeWhiteBackground(img) {
