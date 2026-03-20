@@ -21,17 +21,20 @@ module.exports = async (req, res) => {
 
     const base = prompt.trim();
     const fullPrompt = (style ? `${style} ${base}` : base) +
-      ', isolated on a plain white background, suitable for printing on apparel, no border or frame';
+      ', isolated on a plain solid white background, suitable for printing on apparel, no border or frame';
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: fullPrompt }] }],
-          generationConfig: {
-            responseModalities: ['IMAGE'],
+          instances: [{ prompt: fullPrompt }],
+          parameters: {
+            sampleCount: 1,
+            aspectRatio: '3:4',
+            personGeneration: 'allow_all',
+            outputOptions: { mimeType: 'image/png' },
           },
         }),
       }
@@ -39,7 +42,7 @@ module.exports = async (req, res) => {
 
     if (!response.ok) {
       const errBody = await response.text();
-      console.error('Gemini API error:', response.status, errBody);
+      console.error('Imagen API error:', response.status, errBody);
       if (response.status === 429) {
         return res.status(429).json({ error: 'Rate limited — please wait a moment and try again' });
       }
@@ -47,26 +50,18 @@ module.exports = async (req, res) => {
     }
 
     const data = await response.json();
+    const predictions = data.predictions;
 
-    // Extract inline image from response
-    const parts = data.candidates?.[0]?.content?.parts;
-    if (!parts) {
-      return res.status(502).json({ error: 'No content returned from Gemini' });
-    }
-
-    const imagePart = parts.find(p => p.inlineData);
-    if (!imagePart) {
-      // Might have been blocked by safety filters
-      const textPart = parts.find(p => p.text);
+    if (!predictions || !predictions.length || !predictions[0].bytesBase64Encoded) {
       return res.status(400).json({
         error: 'No image generated',
-        details: textPart?.text || 'The prompt may have been blocked by safety filters',
+        details: 'The prompt may have been blocked by safety filters',
       });
     }
 
     return res.status(200).json({
-      image: imagePart.inlineData.data,
-      mimeType: imagePart.inlineData.mimeType || 'image/png',
+      image: predictions[0].bytesBase64Encoded,
+      mimeType: 'image/png',
     });
   } catch (error) {
     console.error('Generate image error:', error);

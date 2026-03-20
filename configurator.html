@@ -2174,9 +2174,32 @@
         });
     }
 
+    function removeWhiteBackground(img) {
+        const c = document.createElement('canvas');
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, c.width, c.height);
+        const d = imageData.data;
+        const threshold = 240;
+        for (let i = 0; i < d.length; i += 4) {
+            if (d[i] >= threshold && d[i+1] >= threshold && d[i+2] >= threshold) {
+                d[i+3] = 0;
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        return c.toDataURL('image/png');
+    }
+
     function addAIResult(dataUrl) {
         const img = new Image();
-        img.onload = function() { addLayer(img); };
+        img.onload = function() {
+            const cleanUrl = removeWhiteBackground(img);
+            const cleanImg = new Image();
+            cleanImg.onload = function() { addLayer(cleanImg); };
+            cleanImg.src = cleanUrl;
+        };
         img.onerror = function() { alert('Could not load image'); };
         img.src = dataUrl;
     }
