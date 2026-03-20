@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
 
     const base = prompt.trim();
     const fullPrompt = (style ? `${style} ${base}` : base) +
-      ', on a transparent background, suitable for printing on apparel, portrait or vertical orientation preferred';
+      ', isolated on a plain white background, suitable for printing on apparel, no border or frame';
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
