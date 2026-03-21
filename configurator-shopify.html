@@ -2072,10 +2072,9 @@
             const { ix, iy, iw, ih } = getImgRect();
             const cx = ix + iw * z.x;
             const cy = iy + ih * z.y;
-            const innerR = Math.min(iw, ih) * z.r;
-            const clipR = innerR * 1.2; // clip beyond stitching — overlay covers the edge
-            return { cx, cy, r: clipR, innerR, circular: true,
-                     x: cx - innerR, y: cy - innerR, w: innerR * 2, h: innerR * 2 };
+            const r = Math.min(iw, ih) * z.r;
+            return { cx, cy, r, circular: true,
+                     x: cx - r, y: cy - r, w: r * 2, h: r * 2 };
         }
         return { x: cw * z.x, y: ch * z.y, w: cw * z.w, h: ch * z.h };
     }
@@ -3397,8 +3396,8 @@
             let iw = expW, ih = expH;
             if (iw / ih > nat) { iw = ih * nat; } else { ih = iw / nat; }
             const ix = (expW - iw) / 2, iy = (expH - ih) / 2;
-            const clipR = Math.min(iw, ih) * z.r * 1.2;
-            eCtx.arc(ix + iw * z.x, iy + ih * z.y, clipR, 0, Math.PI * 2);
+            const r = Math.min(iw, ih) * z.r;
+            eCtx.arc(ix + iw * z.x, iy + ih * z.y, r, 0, Math.PI * 2);
         } else {
             eCtx.rect(expW * z.x, expH * z.y, expW * z.w, expH * z.h);
         }

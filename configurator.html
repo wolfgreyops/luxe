@@ -1724,10 +1724,9 @@
             const { ix, iy, iw, ih } = getImgRect();
             const cx = ix + iw * z.x;
             const cy = iy + ih * z.y;
-            const innerR = Math.min(iw, ih) * z.r;
-            const clipR = innerR * 1.2;
-            return { cx, cy, r: clipR, innerR, circular: true,
-                     x: cx - innerR, y: cy - innerR, w: innerR * 2, h: innerR * 2 };
+            const r = Math.min(iw, ih) * z.r;
+            return { cx, cy, r, circular: true,
+                     x: cx - r, y: cy - r, w: r * 2, h: r * 2 };
         }
         return { x: cw * z.x, y: ch * z.y, w: cw * z.w, h: ch * z.h };
     }
@@ -2923,7 +2922,7 @@
             let ciw = cartCanvas.width, cih = cartCanvas.height;
             if (ciw / cih > nat) { ciw = cih * nat; } else { cih = ciw / nat; }
             const cix = (cartCanvas.width - ciw) / 2, ciy = (cartCanvas.height - cih) / 2;
-            const r = Math.min(ciw, cih) * z.r * 1.2;
+            const r = Math.min(ciw, cih) * z.r;
             cCtx.arc(cix + ciw * z.x, ciy + cih * z.y, r, 0, Math.PI * 2);
         } else {
             cCtx.rect(cartCanvas.width * z.x, cartCanvas.height * z.y, cartCanvas.width * z.w, cartCanvas.height * z.h);
