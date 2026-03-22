@@ -34,6 +34,7 @@ module.exports = async (req, res) => {
             sampleCount: 1,
             aspectRatio: '3:4',
             personGeneration: 'allow_all',
+            imageSize: '2K',
             outputOptions: { mimeType: 'image/png' },
           },
         }),

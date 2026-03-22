@@ -2919,8 +2919,13 @@
         const cartCanvas = document.getElementById('cartPreviewCanvas');
         const cCtx = cartCanvas.getContext('2d');
         const previewSize = 600;
-        cartCanvas.width = previewSize;
-        cartCanvas.height = Math.round(previewSize * (canvas.height / canvas.width));
+        if (garment.circular) {
+            cartCanvas.width = previewSize;
+            cartCanvas.height = previewSize;
+        } else {
+            cartCanvas.width = previewSize;
+            cartCanvas.height = Math.round(previewSize * (canvas.height / canvas.width));
+        }
         cartCanvas.style.width = '100%';
         cartCanvas.style.display = 'block';
         cCtx.drawImage(tshirtImg, 0, 0, cartCanvas.width, cartCanvas.height);
@@ -3098,11 +3103,14 @@
     })();
 
     function exportDesign() {
+        const g = GARMENTS[currentGarment];
         const exp = document.createElement('canvas');
-        exp.width = 1200; exp.height = 1300;
+        const expW = g.circular ? 1200 : 1200;
+        const expH = g.circular ? 1200 : 1300;
+        exp.width = expW; exp.height = expH;
         const eCtx = exp.getContext('2d');
-        eCtx.drawImage(tshirtImg, 0, 0, 1200, 1300);
-        const scaleX = exp.width / canvas.width, scaleY = exp.height / canvas.height;
+        eCtx.drawImage(tshirtImg, 0, 0, expW, expH);
+        const scaleX = expW / canvas.width, scaleY = expH / canvas.height;
         layers.forEach(l => {
             const cx = (l.x + l.w / 2) * scaleX, cy = (l.y + l.h / 2) * scaleY;
             const w = l.w * scaleX, h = l.h * scaleY;

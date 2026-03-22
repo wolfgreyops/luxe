@@ -727,7 +727,7 @@
         .cart-item-preview img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
         }
         .cart-item-info {
             flex: 1;
@@ -787,8 +787,7 @@
         }
         .ai-style-row select:focus { border-color: var(--accent); }
         .preview-toggles {
-            position: absolute; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 12px; justify-content: center; z-index: 5;
+            display: flex; gap: 12px; margin-top: 6px;
         }
         .preview-toggle {
             display: flex; align-items: center; gap: 4px; cursor: pointer;
@@ -1653,9 +1652,6 @@
         <div class="canvas-wrapper" id="canvasWrapper">
             <img class="tshirt-img" id="tshirtImg" src="tees/5001_STAPLE_TEE_BLACK.jpg" alt="T-Shirt">
             <canvas id="designCanvas"></canvas>
-            <div class="preview-toggles">
-                <label class="preview-toggle"><input type="checkbox" id="showPrintZoneToggle" checked onchange="togglePrintZone()"><span>Print Zone</span></label>
-            </div>
         </div>
 
         <div class="product-info">
@@ -1667,6 +1663,9 @@
                 <div class="size-qty-box"><label>L</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>
                 <div class="size-qty-box"><label>XL</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>
                 <div class="size-qty-box"><label>2XL</label><div class="qty-stepper"><button class="qty-btn qty-up" onclick="stepQty(this,1)">&#9650;</button><input type="number" min="0" value="0" placeholder="0"><button class="qty-btn qty-down" onclick="stepQty(this,-1)">&#9660;</button></div></div>
+            </div>
+            <div class="preview-toggles">
+                <label class="preview-toggle"><input type="checkbox" id="showPrintZoneToggle" checked onchange="togglePrintZone()"><span>Print Zone</span></label>
             </div>
         </div>
     </div>
@@ -2355,17 +2354,6 @@
         syncSliders(); syncAttributes(); render(); renderLayersList(); updateOrderBtn();
     }
 
-    function positionPrintZoneToggle() {
-        const toggles = document.querySelector('.preview-toggles');
-        if (!toggles || toggles.style.display === 'none') return;
-        const wrapperRect = document.getElementById('canvasWrapper').getBoundingClientRect();
-        const imgRect = tshirtImg.getBoundingClientRect();
-        const bottomOffset = imgRect.bottom - wrapperRect.top + 6;
-        const imgCenterX = (imgRect.left + imgRect.width / 2) - wrapperRect.left;
-        toggles.style.top = bottomOffset + 'px';
-        toggles.style.left = imgCenterX + 'px';
-    }
-
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -2490,7 +2478,6 @@
             }
         }
 
-        positionPrintZoneToggle();
     }
 
     // Shirt swap
@@ -3440,8 +3427,17 @@
     }
 
     function generateDesignPreview() {
-        // Generate a composite preview image (shirt + design)
+        const g = GARMENTS[currentGarment];
         const exp = document.createElement('canvas');
+        if (g.circular) {
+            // Square canvas matching patch aspect ratio, transparent background
+            const size = 800;
+            exp.width = size; exp.height = size;
+            const eCtx = exp.getContext('2d');
+            eCtx.drawImage(tshirtImg, 0, 0, size, size);
+            drawLayersOnExport(eCtx, size, size);
+            return exp.toDataURL('image/png');
+        }
         exp.width = 800; exp.height = 870;
         const eCtx = exp.getContext('2d');
         eCtx.drawImage(tshirtImg, 0, 0, 800, 870);
@@ -3699,11 +3695,20 @@
     });
 
     function exportDesign() {
+        const g = GARMENTS[currentGarment];
         const exp = document.createElement('canvas');
-        exp.width = 1200; exp.height = 1300;
-        const eCtx = exp.getContext('2d');
-        eCtx.drawImage(tshirtImg, 0, 0, 1200, 1300);
-        drawLayersOnExport(eCtx, 1200, 1300);
+        if (g.circular) {
+            const size = 1200;
+            exp.width = size; exp.height = size;
+            const eCtx = exp.getContext('2d');
+            eCtx.drawImage(tshirtImg, 0, 0, size, size);
+            drawLayersOnExport(eCtx, size, size);
+        } else {
+            exp.width = 1200; exp.height = 1300;
+            const eCtx = exp.getContext('2d');
+            eCtx.drawImage(tshirtImg, 0, 0, 1200, 1300);
+            drawLayersOnExport(eCtx, 1200, 1300);
+        }
         const link = document.createElement('a');
         link.download = 'luxe-design.png';
         link.href = exp.toDataURL();
