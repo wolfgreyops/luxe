@@ -96,7 +96,9 @@ document.addEventListener('DOMContentLoaded', function() {
             img.src = m.url;
             img.srcset = '';
             img.alt = 'Your Custom Design';
-            img.style.objectFit = 'contain';
+            img.style.setProperty('object-fit', 'contain', 'important');
+            img.style.setProperty('aspect-ratio', 'auto', 'important');
+            img.style.setProperty('height', 'auto', 'important');
             img.style.background = '#f5f5f5';
           }
         });

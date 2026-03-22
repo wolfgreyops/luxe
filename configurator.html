@@ -654,7 +654,8 @@
         }
         .ai-style-row select:focus { border-color: var(--accent); }
         .preview-toggles {
-            display: flex; gap: 12px; justify-content: center; margin-top: 6px;
+            position: absolute; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 12px; justify-content: center; z-index: 5;
         }
         .preview-toggle {
             display: flex; align-items: center; gap: 4px; cursor: pointer;
@@ -1480,9 +1481,9 @@
         <div class="canvas-wrapper" id="canvasWrapper">
             <img class="tshirt-img" id="tshirtImg" src="tees/5001_STAPLE_TEE_BLACK.jpg" alt="T-Shirt">
             <canvas id="designCanvas"></canvas>
-        </div>
-        <div class="preview-toggles">
-            <label class="preview-toggle"><input type="checkbox" id="showPrintZoneToggle" checked onchange="togglePrintZone()"><span>Print Zone</span></label>
+            <div class="preview-toggles">
+                <label class="preview-toggle"><input type="checkbox" id="showPrintZoneToggle" checked onchange="togglePrintZone()"><span>Print Zone</span></label>
+            </div>
         </div>
 
         <div class="product-info">
@@ -1994,6 +1995,17 @@
         syncSliders(); syncAttributes(); render(); renderLayersList(); updateOrderBtn();
     }
 
+    function positionPrintZoneToggle() {
+        const toggles = document.querySelector('.preview-toggles');
+        if (!toggles || toggles.style.display === 'none') return;
+        const wrapperRect = document.getElementById('canvasWrapper').getBoundingClientRect();
+        const imgRect = tshirtImg.getBoundingClientRect();
+        const bottomOffset = imgRect.bottom - wrapperRect.top + 6;
+        const imgCenterX = (imgRect.left + imgRect.width / 2) - wrapperRect.left;
+        toggles.style.top = bottomOffset + 'px';
+        toggles.style.left = imgCenterX + 'px';
+    }
+
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -2116,6 +2128,8 @@
                 ctx.restore();
             }
         }
+
+        positionPrintZoneToggle();
     }
 
     // Shirt swap
